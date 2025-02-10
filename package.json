@@ -1,0 +1,42 @@
+{
+  "name": "@adobe/helix-importer-jcr-packaging",
+  "version": "0.0.1",
+  "description": "helix-importer-jcr-packaging",
+  "main": "src/index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/helix-importer-jcr-packaging.git"
+  },
+  "scripts": {
+    "test": "c8 mocha",
+    "lint": "eslint .",
+    "prepare": "npx husky install"
+  },
+  "mocha": {
+    "recursive": "true",
+    "spec": "test/**/*.test.js",
+    "reporter": "mocha-multi-reporters",
+    "reporter-options": "configFile=.mocha-multi.json"
+  },
+  "lint-staged": {
+    "*.js": "eslint"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@adobe/eslint-config-helix": "2.0.8",
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/exec": "6.0.3",
+    "@semantic-release/git": "10.0.1",
+    "c8": "10.1.2",
+    "chai": "5.1.2",
+    "eslint": "8.57.1",
+    "eslint-import-resolver-exports": "1.0.0-beta.5",
+    "eslint-plugin-header": "3.1.1",
+    "eslint-plugin-import": "2.31.0",
+    "mocha": "10.8.2",
+    "mocha-multi-reporters": "^1.5.1",
+    "sinon": "19.0.2",
+    "sinon-chai": "4.0.0"
+  }
+}
