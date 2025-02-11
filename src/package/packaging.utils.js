@@ -88,11 +88,11 @@ export const getPropertiesXml = (packageName) => {
 };
 
 /**
- * Get the filter.xml file for the content package.
- * @param {Array} jcrPages the JCR pages to include in the package
+ * Generate the filter.xml file for the content package based on the JCR pages.
+ * @param {Array<Page>} jcrPages the pages to include in the package.
  * @returns the filter.xml file
  */
-export const getFilterXml = async (jcrPages) => {
+export const getFilterXml = (jcrPages) => {
   const pageFilters = jcrPages.reduce((acc, page) => `${acc}<filter root='${page.jcrPath}'>\n</filter>\n`, '');
 
   const filterXml = `<?xml version='1.0' encoding='UTF-8'?>
@@ -104,10 +104,13 @@ export const getFilterXml = async (jcrPages) => {
 };
 
 /**
- * Get the package name based on the site folder name and the pages.
- * @param {Array} pages the pages to be included in the package
- * @param {string} siteFolderName the name of the site folder in AEM
- * @returns the package name
+ * Generate a package name based on the site folder name and the pages.
+ * If there is only one page, the package name will be the site folder name
+ * followed by the page name. If there are multiple pages, the package name
+ * will be the site folder name.
+ * @param {Array<Page>} pages the pages to be included in the package.
+ * @param {string} siteFolderName the name of the site folder in AEM.
+ * @returns {string} the package name.
  */
 export const getPackageName = (pages, siteFolderName) => {
   if (pages.length === 1) {
@@ -137,44 +140,24 @@ export const getJcrPagePath = (path, siteFolderName) => {
 };
 
 /**
- * Get all elements with the "fileReference" attribute.
- * @param {string} xml - The XML string to parse.
- * @returns {Array} Array of objects containing image element and attribute name.
- */
-export const getBlocks = (doc) => {
-  // Find all elements that have the 'fileReference' attribute
-  const allElements = doc.getElementsByTagName('*'); // Get all elements
-  const items = [];
-
-  for (let i = 0; i < allElements.length; i += 1) {
-    const element = allElements[i];
-
-    // Check if the element has the 'fileReference' attribute
-    if (element.getAttribute('sling:resourceType') === 'core/franklin/components/block/v1/block') {
-      items.push(element);
-    }
-  }
-
-  return items;
-};
-
-/**
  * Get the JCR path for an asset.
- * @param {string} assetUrl - The URL of the asset
+ * @param {URL} assetUrl - The URL of the asset
  * @param {string} assetFolderName - The name of the asset folder in AEM
  * @returns the JCR path for the asset
  */
 const getJcrAssetPath = (assetUrl, assetFolderName) => {
-  // add the query parameters to the path as _name1value1_name2value2
   const extension = (assetUrl.pathname.includes('.')) ? `.${assetUrl.pathname.split('.').pop()}` : '';
   let path = assetUrl.pathname.replace(extension, '');
+
   if (path.startsWith('/content/dam/')) {
     // replace the 3rd token with the asset folder name
     const tokens = path.split('/');
-    tokens.splice(3, 1, assetFolderName);
+    // insert the assetFolderName in index position 3 ("", /content, /dam)
+    // and move everything after over resulting in /content/dam/<site>/<asset_path>
+    tokens.splice(3, 0, assetFolderName);
     return `${tokens.join('/')}${extension}`;
   }
-  // const suffix = Array.from(params.keys()).map((key) => `_${key}${params.get(key)}`).join('');
+
   const suffix = '';
   // replace media_ with media1_ in path to avoid conflicts with the media folder
   path = path.replace('/media_', '/media1_');
@@ -190,9 +173,6 @@ const getJcrAssetPath = (assetUrl, assetFolderName) => {
  * @returns the JCR path for the file reference
  */
 const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
-  if (!assetReference || assetReference === '') {
-    return null;
-  }
   const host = new URL(pageUrl).origin;
   let jcrPath = assetReference;
   let url;
@@ -271,24 +251,25 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
       // Unescape HTML entities (needs double decoding as image urls are double encoded in the xml)
-      let unescapedAttrValue = he.decode(he.decode(node.getAttribute(attr.name)));
+      // console.log(`Checking attribute: ${attr.name}`);
+      let attrValue = he.decode(he.decode(node.getAttribute(attr.name)));
       let modified = false;
-      // eslint-disable-next-line
-      for (const originalPath of jcrAssetMap.keys()) {
-        if (unescapedAttrValue.includes(originalPath)) {
-          const jcrAssetPath = getJcrAssetRef(originalPath, pageUrl, assetFolderName);
+      const keys = jcrAssetMap.keys();
+      keys.forEach((key) => {
+        if (attrValue.startsWith(key)) {
+          const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
           // update the map with the new jcr path
-          updateJcrAssetMap(jcrAssetMap, originalPath, jcrAssetPath, pageUrl);
+          updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
           // update the attribute value with the new jcr path
-          unescapedAttrValue = unescapedAttrValue.replace(originalPath, jcrAssetPath);
+          attrValue = attrValue.replace(key, jcrAssetPath);
           modified = true;
         }
-      }
+      });
       // if any image path was found and updated in the attribute value, escape and set it back
       if (modified) {
         // while updating the attribute value, only single escaping is required
         // as the adjusted jcr path should not contain any special characters (&, <, >, ", ', →, =)
-        const escapedAttrValue = he.encode(unescapedAttrValue);
+        const escapedAttrValue = he.encode(attrValue);
         // update the attribute value
         node.setAttribute(attr.name, escapedAttrValue);
       }
