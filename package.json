@@ -4,6 +4,10 @@
   "description": "helix-importer-jcr-packaging",
   "main": "src/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/adobe/helix-importer-jcr-packaging.git"
