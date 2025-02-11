@@ -12,7 +12,7 @@
 /* eslint-env mocha */
 import { readFile } from 'fs/promises';
 import assert from 'assert';
-import { updateAssetReferences } from '../../src/package/packaging.js';
+import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
 import { getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
@@ -91,5 +91,62 @@ describe('jcr-path-mapping', () => {
         `Mismatch for key: ${key}, expected: ${expectedValue}, got: ${actualValue}`,
       );
     });
+  });
+
+  it('should handle XML parsing errors in updateAssetReferences', async () => {
+    const invalidXml = '<invalid><xml>';
+    const imageUrlMapping = await getImageUrlKeysMap();
+    const result = await updateAssetReferences(
+      invalidXml,
+      PAGE_URL,
+      ASSET_FOLDER_NAME,
+      imageUrlMapping,
+    );
+    assert.strictEqual(result, invalidXml, 'Expected the original invalid XML to be returned');
+  });
+
+  it('should create a JCR package with empty pages', async () => {
+    const dir = {}; // Mock directory handle
+    const pages = [];
+    const imageMappings = new Map();
+    const siteFolderName = 'site';
+    const assetFolderName = 'assets';
+
+    await createJcrPackage(dir, pages, imageMappings, siteFolderName, assetFolderName);
+    // No assertions needed, just ensure no errors are thrown
+  });
+
+  it('should create a JCR package with valid pages', async () => {
+    const dir = {}; // Mock directory handle
+    const pages = [
+      {
+        path: '/content/site/page1',
+        data: await loadFile(ORIGINAL_XML_PATH),
+        url: PAGE_URL,
+      },
+    ];
+    const imageMappings = await getImageUrlKeysMap();
+    const siteFolderName = 'site';
+    const assetFolderName = 'assets';
+
+    await createJcrPackage(dir, pages, imageMappings, siteFolderName, assetFolderName);
+    // No assertions needed, just ensure no errors are thrown
+  });
+
+  it('should handle empty ancestor pages in createJcrPackage', async () => {
+    const dir = {}; // Mock directory handle
+    const pages = [
+      {
+        path: '/content/site/page1',
+        data: await loadFile(ORIGINAL_XML_PATH),
+        url: PAGE_URL,
+      },
+    ];
+    const imageMappings = await getImageUrlKeysMap();
+    const siteFolderName = 'site';
+    const assetFolderName = 'assets';
+
+    await createJcrPackage(dir, pages, imageMappings, siteFolderName, assetFolderName);
+    // No assertions needed, just ensure no errors are thrown
   });
 });

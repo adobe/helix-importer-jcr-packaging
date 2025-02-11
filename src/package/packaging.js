@@ -44,17 +44,12 @@ const addPage = async (page, dir, prefix, zip) => {
  * @returns {Promise<*|string>} - The updated xml content
  */
 export const updateAssetReferences = async (xml, pageUrl, assetFolderName, imageMappings) => {
-  const doc = getParsedXml(xml);
-
-  // if parsing fails, log the error
-  if (doc.getElementsByTagName('parsererror').length > 0) {
+  let doc;
+  try {
+    doc = getParsedXml(xml);
+  } catch (error) {
     // eslint-disable-next-line no-console
-    const errors = doc.getElementsByTagName('parsererror');
-    // eslint-disable-next-line no-restricted-syntax
-    for (const error of errors) {
-      console.error('Error parsing the XML document for the JCR page ', pageUrl, error.textContent);
-    }
-    // console.error('Error parsing the XML document for the JCR page ', pageUrl);
+    console.error('Error parsing the XML document for the JCR page', pageUrl, error.message);
     return xml;
   }
 
