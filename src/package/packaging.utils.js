@@ -9,16 +9,26 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import he from 'he';
+import { DOMParser } from '@xmldom/xmldom';
 
-/* global he */
+/**
+ * Get the parsed XML document.
+ * @param {string} xmlString - The XML string to parse.
+ * @returns {*|Document} - The parsed XML document.
+ */
+export const getParsedXml = (xmlString) => {
+  const parser = new DOMParser();
+  return parser.parseFromString(xmlString, 'text/xml');
+};
+
 /**
  * Get the properties of a page from the jcr:content node.
  * @param {string} xml the XML string of the page
  * @returns the properties of the jcr:content node
  */
 export const getPageProperties = (xml) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'text/xml');
+  const doc = getParsedXml(xml);
 
   // get the jcr:content node properties
   const namespaceURI = 'http://www.jcp.org/jcr/1.0';
@@ -35,8 +45,7 @@ export const getPageProperties = (xml) => {
  * @returns the children of the jcr:content node
  */
 export const getPageContentChildren = (xml) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'text/xml');
+  const doc = getParsedXml(xml);
 
   // get the names of the jcr:content node children
   const namespaceURI = 'http://www.jcp.org/jcr/1.0';
@@ -218,7 +227,7 @@ const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
  * @param {string} pageUrl - The full URL of the current page.
  * @returns {string|null} - The fully qualified URL or null if the input is invalid.
  */
-function getFullAssetUrl(assetReference, pageUrl) {
+export function getFullAssetUrl(assetReference, pageUrl) {
   if (!assetReference) return null;
 
   // Already a full URL, return as is

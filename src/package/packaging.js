@@ -9,8 +9,10 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* global JSZip */
+import JSZip from 'jszip';
+import { XMLSerializer } from '@xmldom/xmldom';
 import {
+  getParsedXml,
   getPageProperties,
   getPageContentChildren,
   getPropertiesXml,
@@ -33,10 +35,16 @@ const addPage = async (page, dir, prefix, zip) => {
   await saveFile(dir, `${prefix}/${page.contentXmlPath}`, page.processedXml);
 };
 
-// Updates the asset references to point to their respective JCR paths
-const getProcessedJcr = async (xml, pageUrl, assetFolderName, imageMappings) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'text/xml');
+/**
+ * Updates the asset references in given xml, to point to their respective JCR paths
+ * @param xml - The xml content of the page
+ * @param pageUrl - The url of the site page
+ * @param assetFolderName - The name of the asset folder in AEM
+ * @param imageMappings - A map to store the image urls and their corresponding jcr paths
+ * @returns {Promise<*|string>} - The updated xml content
+ */
+export const updateAssetReferences = async (xml, pageUrl, assetFolderName, imageMappings) => {
+  const doc = getParsedXml(xml);
 
   // if parsing fails, log the error
   if (doc.getElementsByTagName('parsererror').length > 0) {
@@ -64,7 +72,12 @@ export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageM
       sourceXml: page.data,
       pageProperties: getPageProperties(page.data),
       pageContentChildren: getPageContentChildren(page.data),
-      processedXml: await getProcessedJcr(page.data, page.url, assetFolderName, imageMappings),
+      processedXml: await updateAssetReferences(
+        page.data,
+        page.url,
+        assetFolderName,
+        imageMappings,
+      ),
       jcrPath: getJcrPagePath(page.path, siteFolderName),
       contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
       url: page.url,

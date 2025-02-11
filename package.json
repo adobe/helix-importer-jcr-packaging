@@ -11,7 +11,7 @@
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",
-    "prepare": "npx husky install",
+    "prepare": "husky",
     "semantic-release": "semantic-release"
   },
   "mocha": {
@@ -24,6 +24,11 @@
     "*.js": "eslint"
   },
   "license": "Apache-2.0",
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.7",
+    "he": "^1.2.0",
+    "jszip": "3.10.1"
+  },
   "devDependencies": {
     "@adobe/eslint-config-helix": "2.0.8",
     "@semantic-release/changelog": "6.0.3",
@@ -35,6 +40,7 @@
     "eslint-import-resolver-exports": "1.0.0-beta.5",
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.31.0",
+    "husky": "^9.1.7",
     "mocha": "10.8.2",
     "mocha-multi-reporters": "^1.5.1",
     "sinon": "19.0.2",
