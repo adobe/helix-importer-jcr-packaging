@@ -1,6 +1,6 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
-import { rmdir } from 'fs/promises';
+import { rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import { saveFile } from '../../src/shared/filesystem.js';
 
@@ -17,7 +17,7 @@ describe('filesystem', () => {
   });
 
   afterEach(() => {
-    rmdir(rootDir, { recursive: true, force: true });
+    rm(rootDir, { recursive: true });
   });
 
   describe('node', () => {
