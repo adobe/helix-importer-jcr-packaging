@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.0.0...v1.1.0) (2025-02-12)
+
+
+### Features
+
+* **sites-29165:** simplify the api used to create a package ([#4](https://github.com/adobe/helix-importer-jcr-packaging/issues/4)) ([84510a6](https://github.com/adobe/helix-importer-jcr-packaging/commit/84510a65449343cb7498373aa036d562243ede59))
+
 # 1.0.0 (2025-02-12)
 
 
