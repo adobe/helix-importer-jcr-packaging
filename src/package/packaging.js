@@ -60,27 +60,22 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderName, image
   return serializer.serializeToString(doc);
 };
 
-export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageMappings) => {
-  if (jcrPages.length === 0) {
-    return Promise.all(pages.map(async (page) => ({
-      path: page.path,
-      sourceXml: page.data,
-      pageProperties: getPageProperties(page.data),
-      pageContentChildren: getPageContentChildren(page.data),
-      processedXml: await updateAssetReferences(
-        page.data,
-        page.url,
-        assetFolderName,
-        imageMappings,
-      ),
-      jcrPath: getJcrPagePath(page.path, siteFolderName),
-      contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
-      url: page.url,
-    })));
-  }
-  // return the cached pages
-  return Promise.resolve(jcrPages);
-};
+// eslint-disable-next-line max-len
+export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageMappings) => Promise.all(pages.map(async (page) => ({
+  path: page.path,
+  sourceXml: page.data,
+  pageProperties: getPageProperties(page.data),
+  pageContentChildren: getPageContentChildren(page.data),
+  processedXml: await updateAssetReferences(
+    page.data,
+    page.url,
+    assetFolderName,
+    imageMappings,
+  ),
+  jcrPath: getJcrPagePath(page.path, siteFolderName),
+  contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
+  url: page.url,
+})));
 
 const addFilterXml = async (dir, prefix, zip) => {
   const { filterXmlPath, filterXml } = await getFilterXml(jcrPages);

@@ -256,7 +256,12 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       let modified = false;
       const keys = jcrAssetMap.keys();
       keys.forEach((key) => {
-        if (attrValue.startsWith(key)) {
+        // The value can be html as text, that has an image reference at some position. For eg:
+        // eslint-disable-next-line max-len
+        // * attrValue = `<ul> <li></li> <li> <p><img src="/media_155f5bb528b2327053971d5eef5276d7dca867f8f.jpeg?width=750&format=jpeg&optimize=medium" alt=""></p> <p><strong>Wolf Mix Master</strong></p> <p>2024 Wolf Mix Master is ready to move out!</p> </li> <li> <p><img src="/media_1f3f98711f157e84bd39ed3ef552987b4da75ddbd.jpeg?width=750&format=jpeg&optimize=medium" alt=""></p> <p><strong>Mooooove Me!</strong></p> <p>The rockin' cow plush is ready to go to pasture. Order now and let him loose!</p> </li> </ul>`
+        // * key = `/media_155f5bb528b2327053971d5eef5276d7dca867f8f.jpeg`
+        // So we need to check with includes, rather than startsWith
+        if (attrValue.includes(key)) {
           const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
           // update the map with the new jcr path
           updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
