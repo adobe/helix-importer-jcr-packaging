@@ -39,13 +39,12 @@ const findReferenceDefinitionsInMarkdown = (markdownContent) => {
  * Function to scan for images in a markdown file.
  *
  * @param markdownContent - The content of the markdown file
- * @returns {Map} A Map of image urls as key
+ * @returns {Array<string>} A Map of image urls as key
  */
 const findImagesInMarkdown = (markdownContent) => {
   const references = findReferenceDefinitionsInMarkdown(markdownContent);
 
-  // Create a new Map
-  const imageUrls = new Map();
+  const imageUrls = [];
 
   // Identify each image url in the markdown content
   let match;
@@ -59,28 +58,29 @@ const findImagesInMarkdown = (markdownContent) => {
       url = references[match[5]] || null; // Resolve URL from reference map
     }
     if (url) {
-      imageUrls.set(url, '');
+      imageUrls.push(url);
     }
   }
+
   return imageUrls;
 };
 
 /**
- * Get the list image urls present in the given markdown.
- * @param {string} markdownContent
- * @returns {Map} A Map of image urls as key (but empty values - will be populated later).
+ * Get the list image urls present in the markdown.
+ * @param {string} markdownContent - The content of the markdown file
+ * @returns {Array<string>} An array of image urls.
  */
-const getImageUrlMap = (markdownContent) => {
+const getImageUrlsFromMarkdown = (markdownContent) => {
   try {
     return findImagesInMarkdown(markdownContent);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.warn('Error in image urls from markdown:', error);
-    return new Map();
+    return [];
   }
 };
 
 export {
   // eslint-disable-next-line import/prefer-default-export
-  getImageUrlMap,
+  getImageUrlsFromMarkdown,
 };
