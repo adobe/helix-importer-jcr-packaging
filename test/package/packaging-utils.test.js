@@ -11,9 +11,9 @@
  */
 /* eslint-env mocha */
 import { expect } from 'chai';
-import { JSDOM } from 'jsdom';
+import he from 'he';
 import {
-  getFilterXml, getJcrPagePath, getPackageName,
+  getFilterXml, getJcrPagePath, getPackageName, getParsedXml,
   getPropertiesXml, traverseAndUpdateAssetReferences,
 } from '../../src/package/packaging.utils.js';
 
@@ -68,40 +68,56 @@ describe('packaging-utils', () => {
 
   // write unit test for traverseAndUpdateAssetReferences
   it('should update asset references in the DOM tree', () => {
-    const dom = new JSDOM(`
-      <html lang="en">
-        <body>
-          <img src="http://example.com/content/dam/image.jpg" alt=""/>
-          <img src="https://example.com/cars/honda.jpg"  alt=""/>
-          <a href="./relative/path/to/asset.jpg">Link</a>
-          <div>
-            Nested Image
-            <img src="http://example.com/cars/dodge.jpg" alt=""/>
-            <img src="/content/dam/dodge/cars/charger.jpg" alt=""/>
-          </div>
-        </body>
-      </html>
+    const document = getParsedXml(`<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <jcr:content>
+    <root>
+      <section>
+        <block hero_image="https://domain.com/media_a.jpeg"></block>
+        <text_1 text="&lt;p&gt;&lt;img src=&quot;/car.jpeg?width=750&amp;#x26;format=jpeg&amp;#x26;optimize=medium&quot;&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;/boat.jpeg?width=750&amp;#x26;format=jpeg&amp;#x26;optimize=medium&quot;&gt;&lt;/p&gt;"/>
+        <block_1>
+          <item_0 image="./c.png"></item_0>
+          <item_1 image="./folder/d.png"></item_1>
+        </block_1>
+      </section>
+    </root>
+    <image fileReference="/content/dam/folder/e.png" />
+  </jcr:content>
+</jcr:root>
     `);
-    const { document } = dom.window;
-    const pageUrl = 'http://example.com/content/page.html';
+    const pageUrl = 'http://example.com/folderXYZ/page.html';
     const assetFolderName = 'xwalk';
     const jcrAssetMap = new Map([
-      ['http://example.com/content/dam/image.jpg', '/content/dam/xwalk/image.jpg'],
-      ['./relative/path/to/asset.jpg', '/content/dam/xwalk/relative/path/to/asset.jpg'],
-      ['https://example.com/cars/honda.jpg', '/content/dam/xwalk/cars/honda.jpg'],
-      ['http://example.com/cars/dodge.jpg', '/content/dam/xwalk/cars/dodge.jpg'],
-      ['/content/dam/dodge/cars/charger.jpg', '/content/dam/xwalk/dodge/cars/charger.jpg'],
+      ['https://domain.com/media_a.jpeg', '/content/dam/xwalk/media_a.jpeg'],
+      ['/media_b.jpeg', '/content/dam/xwalk/media1_b.jpeg'],
+      ['/car.jpeg?width=750&format=jpeg&optimize=medium', '/content/dam/xwalk/car.jpeg'],
+      ['/boat.jpeg?width=750&format=jpeg&optimize=medium', '/content/dam/xwalk/boat.jpeg'],
+      ['./c.png', '/content/dam/xwalk/folderXYZ/c.png'],
+      ['./folder/d.png', '/content/dam/xwalk/folderXYZ/folder/d.png'],
+      ['/content/dam/folder/e.png', '/content/dam/xwalk/folder/e.png'],
     ]);
 
-    traverseAndUpdateAssetReferences(document.body, pageUrl, assetFolderName, jcrAssetMap);
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
 
-    const imgs = document.querySelectorAll('img');
-    const a = document.querySelector('a');
+    const blocks = document.getElementsByTagName('block');
+    const blocks1 = document.getElementsByTagName('block_1');
+    const image = document.getElementsByTagName('image');
+    const text = document.getElementsByTagName('text_1');
 
-    expect(imgs[0].getAttribute('src')).to.equal('/content/dam/xwalk/image.jpg');
-    expect(imgs[1].getAttribute('src')).to.equal('/content/dam/xwalk/cars/honda.jpg');
-    expect(imgs[2].getAttribute('src')).to.equal('/content/dam/xwalk/cars/dodge.jpg');
-    expect(imgs[3].getAttribute('src')).to.equal('/content/dam/xwalk/dodge/cars/charger.jpg');
-    expect(a.getAttribute('href')).to.equal('/content/dam/xwalk/content/relative/path/to/asset.jpg');
+    // for each block test to see if the attribute has been updated
+    expect(blocks[0].getAttribute('hero_image')).to.equal('/content/dam/xwalk/media1_a.jpeg');
+    expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderXYZ/c.png');
+    expect(blocks1[0].getElementsByTagName('item_1')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderXYZ/folder/d.png');
+    expect(image[0].getAttribute('fileReference')).to.equal('/content/dam/xwalk/folder/e.png');
+
+    // test to see if the text has been updated
+    expect(text[0].getAttribute('text')).to.equal(
+      he.encode('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>'),
+    );
   });
 });

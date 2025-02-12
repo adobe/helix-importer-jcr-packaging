@@ -253,31 +253,17 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       // Unescape HTML entities (needs double decoding as image urls are double encoded in the xml)
       // console.log(`Checking attribute: ${attr.name}`);
       let attrValue = he.decode(he.decode(node.getAttribute(attr.name)));
-      let modified = false;
-      const keys = Array.from(jcrAssetMap.keys());
+      const keys = [...jcrAssetMap.keys()];
       keys.forEach((key) => {
-        // The value can be html as text, that has an image reference at some position. For eg:
-        // eslint-disable-next-line max-len
-        // * attrValue = `<ul> <li></li> <li> <p><img src="/media_155f5bb528b2327053971d5eef5276d7dca867f8f.jpeg?width=750&format=jpeg&optimize=medium" alt=""></p> <p><strong>Wolf Mix Master</strong></p> <p>2024 Wolf Mix Master is ready to move out!</p> </li> <li> <p><img src="/media_1f3f98711f157e84bd39ed3ef552987b4da75ddbd.jpeg?width=750&format=jpeg&optimize=medium" alt=""></p> <p><strong>Mooooove Me!</strong></p> <p>The rockin' cow plush is ready to go to pasture. Order now and let him loose!</p> </li> </ul>`
-        // * key = `/media_155f5bb528b2327053971d5eef5276d7dca867f8f.jpeg`
-        // So we need to check with includes, rather than startsWith
         if (attrValue.includes(key)) {
           const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
           // update the map with the new jcr path
           updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
           // update the attribute value with the new jcr path
           attrValue = attrValue.replace(key, jcrAssetPath);
-          modified = true;
+          node.setAttribute(attr.name, he.encode(attrValue));
         }
       });
-      // if any image path was found and updated in the attribute value, escape and set it back
-      if (modified) {
-        // while updating the attribute value, only single escaping is required
-        // as the adjusted jcr path should not contain any special characters (&, <, >, ", ', →, =)
-        const escapedAttrValue = he.encode(attrValue);
-        // update the attribute value
-        node.setAttribute(attr.name, escapedAttrValue);
-      }
     }
   }
   // Traverse child nodes
