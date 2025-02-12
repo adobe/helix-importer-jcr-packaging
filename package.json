@@ -28,6 +28,9 @@
   "lint-staged": {
     "*.js": "eslint"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "@xmldom/xmldom": "^0.9.7",
