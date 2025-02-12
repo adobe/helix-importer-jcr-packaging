@@ -10,9 +10,9 @@
  * governing permissions and limitations under the License.
  */
 /* eslint-env mocha */
-import { readFile } from 'fs/promises';
-import assert from 'assert';
-import { updateAssetReferences } from '../../src/package/packaging.js';
+import { readFile, rm } from 'fs/promises';
+import { expect } from 'chai';
+import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
 import { getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
@@ -39,6 +39,16 @@ const getImageUrlKeysMap = async () => loadFile(IMAGE_MAPPING_PATH)
 
 // Test suite for jcr-path-mapping
 describe('jcr-path-mapping', () => {
+  let outdir;
+
+  beforeEach(() => {
+    outdir = `./output/test-${Date.now()}`;
+  });
+
+  afterEach(() => {
+    rm(outdir, { recursive: true, force: true });
+  });
+
   // compare the processed xml with the expected xml
   it('verify asset paths updates in xml', async () => {
     const originalXml = await loadFile(ORIGINAL_XML_PATH);
@@ -57,12 +67,11 @@ describe('jcr-path-mapping', () => {
     const actualXmlDom = getParsedXml(actualProcessedXml);
     const expectedXmlDom = getParsedXml(expectedProcessedXml);
 
-    // Assert that processed XML matches expected XML
-    assert.strictEqual(
+    // expect that processed XML matches expected XML
+    expect(
       actualXmlDom.documentElement.outerHTML,
-      expectedXmlDom.documentElement.outerHTML,
       'Processed XML does not match expected XML',
-    );
+    ).to.deep.equal(expectedXmlDom.documentElement.outerHTML);
   });
 
   // compare the generated image mapping with the expected image mapping
@@ -75,21 +84,72 @@ describe('jcr-path-mapping', () => {
     await updateAssetReferences(originalXml, PAGE_URL, ASSET_FOLDER_NAME, actualImageUrlMapping);
 
     // Compare the two maps
-    assert.strictEqual(
+    expect(
       actualImageUrlMapping.size,
-      expectedImageUrlMapping.size,
       'Image mapping sizes do not match',
-    );
+    ).to.equal(expectedImageUrlMapping.size);
 
     // Array.from(map.entries()).forEach(), which avoids ESLint's no-restricted-syntax rule.
     Array.from(expectedImageUrlMapping.entries()).forEach(([key, expectedValue]) => {
       // the original image urls may be relative, so we need to get the full url for comparison
       const actualValue = actualImageUrlMapping.get(getFullAssetUrl(key, PAGE_URL));
-      assert.strictEqual(
-        actualValue,
-        expectedValue,
-        `Mismatch for key: ${key}, expected: ${expectedValue}, got: ${actualValue}`,
-      );
+      expect(actualValue, `Mismatch for key: ${key}, expected: ${expectedValue}, got: ${actualValue}`)
+        .to.equal(expectedValue);
     });
+  });
+
+  it('should handle XML parsing errors in updateAssetReferences', async () => {
+    const invalidXml = '<invalid><xml>';
+    const imageUrlMapping = await getImageUrlKeysMap();
+    const result = await updateAssetReferences(
+      invalidXml,
+      PAGE_URL,
+      ASSET_FOLDER_NAME,
+      imageUrlMapping,
+    );
+    expect(result, 'Expected the original invalid XML to be returned').to.equal(invalidXml);
+  });
+
+  it('should create a JCR package with empty pages', async () => {
+    const dir = {}; // Mock directory handle
+    const pages = [];
+    const imageMappings = new Map();
+    const siteFolderName = 'site';
+    const assetFolderName = 'assets';
+
+    await createJcrPackage(dir, pages, imageMappings, siteFolderName, assetFolderName);
+    // No assertions needed, just ensure no errors are thrown
+  });
+
+  it('should create a JCR package with valid pages', async () => {
+    const pages = [
+      {
+        path: '/content/site/page1',
+        data: await loadFile(ORIGINAL_XML_PATH),
+        url: PAGE_URL,
+      },
+    ];
+    const imageMappings = await getImageUrlKeysMap();
+    const siteFolderName = 'site';
+    const assetFolderName = 'assets';
+
+    await createJcrPackage(outdir, pages, imageMappings, siteFolderName, assetFolderName);
+    // No assertions needed, just ensure no errors are thrown
+  });
+
+  it('should handle empty ancestor pages in createJcrPackage', async () => {
+    const pages = [
+      {
+        path: '/content/site/page1',
+        data: await loadFile(ORIGINAL_XML_PATH),
+        url: PAGE_URL,
+      },
+    ];
+    const imageMappings = await getImageUrlKeysMap();
+    const siteFolderName = 'site';
+    const assetFolderName = 'assets';
+
+    await createJcrPackage(outdir, pages, imageMappings, siteFolderName, assetFolderName);
+    // No assertions needed, just ensure no errors are thrown
   });
 });

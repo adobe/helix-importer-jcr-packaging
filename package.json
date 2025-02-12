@@ -16,7 +16,8 @@
     "test": "c8 mocha",
     "lint": "eslint .",
     "prepare": "husky",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "semantic-release-dry": "semantic-release --dry-run --branches $CI_BRANCH"
   },
   "mocha": {
     "recursive": "true",
@@ -45,6 +46,7 @@
     "eslint-plugin-header": "3.1.1",
     "eslint-plugin-import": "2.31.0",
     "husky": "^9.1.7",
+    "jsdom": "^26.0.0",
     "mocha": "10.8.2",
     "mocha-multi-reporters": "^1.5.1",
     "sinon": "19.0.2",

@@ -9,12 +9,36 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import path from 'path';
+import { mkdir, writeFile } from 'fs/promises';
 
 async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index += 1) {
     // eslint-disable-next-line no-await-in-loop
     await callback(array[index], index, array);
   }
+}
+
+// Node.js implementation
+async function createDirectoryNode(rootDir, folder) {
+  const newDirPath = `${rootDir}/${folder}`;
+  await mkdir(newDirPath, { recursive: true });
+  return path.resolve(newDirPath);
+}
+
+// Browser implementation
+async function createDirectoryBrowser(rootDir, folder) {
+  return rootDir.getDirectoryHandle(folder, { create: true });
+}
+
+async function createDirectory(rootDir, folder) {
+  if (typeof window !== 'undefined' && window.showDirectoryPicker) {
+    // Browser environment using File System Access API
+    return createDirectoryBrowser(rootDir, folder);
+  }
+
+  // Node.js environment using fs module
+  return createDirectoryNode(rootDir, folder);
 }
 
 /**
@@ -29,30 +53,42 @@ async function getParentDirectory(rootDir, filePath) {
   const folders = filePath.split('/');
   await asyncForEach(folders, async (folder, i) => {
     if (folder && i < folders.length - 1) {
-      dir = await dir.getDirectoryHandle(folder, { create: true });
+      dir = await createDirectory(dir, folder);
     }
   });
 
   return dir;
 }
 
-/**
- * Save a file to the filesystem.
- * @param {FileSystemDirectoryHandle} dirHandle - The directory handle to save the file to.
- * @param {string} path - The path to the file.
- * @param {string} content - The content to save to the file.
- * @return {Promise<void>} - A promise that resolves when the file is saved.
- */
-async function saveFile(dirHandle, path, content) {
-  if (!dirHandle) {
-    throw new Error('No directory handle provided');
-  }
-  const fileName = path.split('/').pop();
-  const dir = await getParentDirectory(dirHandle, path);
+const writeBrowserFile = async (dir, fileName, content) => {
   const fileHandle = await dir.getFileHandle(fileName, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(content);
   return writable.close();
+};
+
+const writeFileToDir = async (dir, fileName, content) => {
+  if (typeof window !== 'undefined' && window.showDirectoryPicker) {
+    return writeBrowserFile(dir, fileName, content);
+  }
+  // Node.js environment using fs module
+  return writeFile(`${dir}/${fileName}`, content);
+};
+
+/**
+ * Save a file to the filesystem.
+ * @param {string} directoryPath - The directory handle to save the file to.
+ * @param {string} filePath - The path to the file.
+ * @param {string} content - The content to save to the file.
+ * @return {Promise<void>} - A promise that resolves when the file is saved.
+ */
+async function saveFile(directoryPath, filePath, content) {
+  if (!directoryPath) {
+    throw new Error('No directory handle provided');
+  }
+  const fileName = filePath.split('/').pop();
+  const dir = await getParentDirectory(directoryPath, filePath);
+  return writeFileToDir(dir, fileName, content);
 }
 
 export {

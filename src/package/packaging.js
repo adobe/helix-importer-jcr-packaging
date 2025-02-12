@@ -44,17 +44,12 @@ const addPage = async (page, dir, prefix, zip) => {
  * @returns {Promise<*|string>} - The updated xml content
  */
 export const updateAssetReferences = async (xml, pageUrl, assetFolderName, imageMappings) => {
-  const doc = getParsedXml(xml);
-
-  // if parsing fails, log the error
-  if (doc.getElementsByTagName('parsererror').length > 0) {
+  let doc;
+  try {
+    doc = getParsedXml(xml);
+  } catch (error) {
     // eslint-disable-next-line no-console
-    const errors = doc.getElementsByTagName('parsererror');
-    // eslint-disable-next-line no-restricted-syntax
-    for (const error of errors) {
-      console.error('Error parsing the XML document for the JCR page ', pageUrl, error.textContent);
-    }
-    // console.error('Error parsing the XML document for the JCR page ', pageUrl);
+    console.error('Error parsing the XML document for the JCR page', pageUrl, error.message);
     return xml;
   }
 
@@ -65,26 +60,22 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderName, image
   return serializer.serializeToString(doc);
 };
 
-export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageMappings) => {
-  if (jcrPages.length === 0) {
-    jcrPages = Promise.all(pages.map(async (page) => ({
-      path: page.path,
-      sourceXml: page.data,
-      pageProperties: getPageProperties(page.data),
-      pageContentChildren: getPageContentChildren(page.data),
-      processedXml: await updateAssetReferences(
-        page.data,
-        page.url,
-        assetFolderName,
-        imageMappings,
-      ),
-      jcrPath: getJcrPagePath(page.path, siteFolderName),
-      contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
-      url: page.url,
-    })));
-  }
-  return jcrPages;
-};
+// eslint-disable-next-line max-len
+export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageMappings) => Promise.all(pages.map(async (page) => ({
+  path: page.path,
+  sourceXml: page.data,
+  pageProperties: getPageProperties(page.data),
+  pageContentChildren: getPageContentChildren(page.data),
+  processedXml: await updateAssetReferences(
+    page.data,
+    page.url,
+    assetFolderName,
+    imageMappings,
+  ),
+  jcrPath: getJcrPagePath(page.path, siteFolderName),
+  contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
+  url: page.url,
+})));
 
 const addFilterXml = async (dir, prefix, zip) => {
   const { filterXmlPath, filterXml } = await getFilterXml(jcrPages);
@@ -130,7 +121,7 @@ const getEmptyAncestorPages = (pages) => {
 
 /**
  * Creates a JCR content package from a directory containing pages.
- * @param {*} dir - The directory handle
+ * @param {*} outputDirectory - The directory handle
  * @param {Array} pages - An array of pages
  * @param {Map} imageMappings - An map to store the image urls and their corresponding jcr paths
  * @param {string} siteFolderName - The name of the site folder in AEM
@@ -138,7 +129,7 @@ const getEmptyAncestorPages = (pages) => {
  * @returns {Promise} The file handle for the generated package.
  */
 export const createJcrPackage = async (
-  dir,
+  outputDirectory,
   pages,
   imageMappings,
   siteFolderName,
@@ -158,7 +149,7 @@ export const createJcrPackage = async (
   for (let i = 0; i < jcrPages.length; i += 1) {
     const page = jcrPages[i];
     // eslint-disable-next-line no-await-in-loop
-    await addPage(page, dir, prefix, zip);
+    await addPage(page, outputDirectory, prefix, zip);
   }
 
   // add the empty ancestor pages
@@ -166,16 +157,18 @@ export const createJcrPackage = async (
   for (let i = 0; i < emptyAncestorPages.length; i += 1) {
     const page = emptyAncestorPages[i];
     // eslint-disable-next-line no-await-in-loop
-    await addPage(page, dir, prefix, zip);
+    await addPage(page, outputDirectory, prefix, zip);
   }
 
   // add the filter.xml file
-  await addFilterXml(dir, prefix, zip);
+  await addFilterXml(outputDirectory, prefix, zip);
 
   // add the properties.xml file
-  await addPropertiesXml(dir, prefix, zip, packageName);
+  await addPropertiesXml(outputDirectory, prefix, zip, packageName);
+
+  const outputType = typeof window !== 'undefined' ? 'blob' : 'nodebuffer';
 
   // save the zip file
-  await zip.generateAsync({ type: 'blob' })
-    .then(async (blob) => saveFile(dir, `${packageName}.zip`, blob));
+  await zip.generateAsync({ type: outputType })
+    .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 };
