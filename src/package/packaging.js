@@ -23,7 +23,6 @@ import {
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
 
-// cache for pages
 let jcrPages = [];
 
 const init = () => {
@@ -123,7 +122,7 @@ const getEmptyAncestorPages = (pages) => {
  * Creates a JCR content package from a directory containing pages.
  * @param {*} outputDirectory - The directory handle
  * @param {Array} pages - An array of pages
- * @param {Map} imageMappings - An map to store the image urls and their corresponding jcr paths
+ * @param {Array<string>} imageUrls - An array of image urls that were found in the markdown.
  * @param {string} siteFolderName - The name of the site folder in AEM
  * @param {string} assetFolderName - The name of the asset folder in AEM
  * @returns {Promise} The file handle for the generated package.
@@ -131,7 +130,7 @@ const getEmptyAncestorPages = (pages) => {
 export const createJcrPackage = async (
   outputDirectory,
   pages,
-  imageMappings,
+  imageUrls,
   siteFolderName,
   assetFolderName,
 ) => {
@@ -143,6 +142,12 @@ export const createJcrPackage = async (
   const packageName = getPackageName(pages, siteFolderName);
   const zip = new JSZip();
   const prefix = 'jcr';
+
+  const imageMappings = new Map();
+  // add the images as keys to the map
+  imageUrls.forEach((url) => {
+    imageMappings.set(url, '');
+  });
 
   // add the pages
   jcrPages = await getJcrPages(pages, siteFolderName, assetFolderName, imageMappings);
@@ -171,4 +176,10 @@ export const createJcrPackage = async (
   // save the zip file
   await zip.generateAsync({ type: outputType })
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
+
+  // Convert Map to plain object
+  const obj = Object.fromEntries(imageMappings);
+
+  // Save the updated image mapping content into a file in the output directory
+  await saveFile(outputDirectory, 'image-mapping.json', JSON.stringify(obj, null, 2));
 };
