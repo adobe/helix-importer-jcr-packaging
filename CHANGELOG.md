@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.1.0...v1.1.1) (2025-02-12)
+
+
+### Bug Fixes
+
+* **build:** remove need for node engine version ([306bdbf](https://github.com/adobe/helix-importer-jcr-packaging/commit/306bdbf868e31ba0b942eeaf23372cecfb232f81))
+
 # [1.1.0](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.0.0...v1.1.0) (2025-02-12)
 
 
