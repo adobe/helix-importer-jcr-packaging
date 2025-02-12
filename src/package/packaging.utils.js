@@ -254,7 +254,7 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       // console.log(`Checking attribute: ${attr.name}`);
       let attrValue = he.decode(he.decode(node.getAttribute(attr.name)));
       let modified = false;
-      const keys = jcrAssetMap.keys();
+      const keys = Array.from(jcrAssetMap.keys());
       keys.forEach((key) => {
         // The value can be html as text, that has an image reference at some position. For eg:
         // eslint-disable-next-line max-len
