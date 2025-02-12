@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe/helix-importer-jcr-packaging.git"
+    "url": "git+https://github.com/adobe/helix-importer-jcr-packaging.git"
   },
   "scripts": {
     "test": "c8 mocha",
