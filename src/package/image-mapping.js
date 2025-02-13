@@ -75,7 +75,7 @@ const getImageUrlsFromMarkdown = (markdownContent) => {
     return findImagesInMarkdown(markdownContent);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.warn('Error in image urls from markdown:', error);
+    console.warn('Error getting image urls from markdown:', error);
     return [];
   }
 };

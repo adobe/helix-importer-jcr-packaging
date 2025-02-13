@@ -14,7 +14,7 @@ import { expect } from 'chai';
 import { getImageUrlsFromMarkdown } from '../../src/index.js';
 
 describe('getImageUrlsFromMarkdown', () => {
-  it('should return a map of image urls', () => {
+  it('should return an array of image urls (reference urls)', () => {
     const markdownContent = `+-----------------------+
 | Hero                  |
 +=======================+
@@ -29,5 +29,42 @@ describe('getImageUrlsFromMarkdown', () => {
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('https://aem.live/car.jpeg');
     expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
+  });
+
+  it('should return an array of image urls (inlined urls)', () => {
+    const markdownContent = `+------------------------------------------+
+| Hero                                     |
++==========================================+
+| ![Car 1](https://aem.live/car.jpeg)      |
+| ![Car 2](https://aem.live/car2.jpeg)     |
++------------------------------------------+`;
+
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    expect(imageUrls).to.have.lengthOf(2);
+    expect(imageUrls[0]).to.equal('https://aem.live/car.jpeg');
+    expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
+  });
+
+  it('should return an array with no image urls', () => {
+    const markdownContent = 'This is a markdown file with no images.';
+
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    expect(imageUrls).to.have.lengthOf(0);
+  });
+
+  it('should return an array of image urls (absolute/relative urls)', () => {
+    const markdownContent = `+------------------------------------------+
+| Hero                                     |
++==========================================+
+| ![Car 1](/car.jpeg)                      |
+| ![Car 2][image0]                         |
++------------------------------------------+
+
+[image0]: /test/car2.jpeg`;
+
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    expect(imageUrls).to.have.lengthOf(2);
+    expect(imageUrls[0]).to.equal('/car.jpeg');
+    expect(imageUrls[1]).to.equal('/test/car2.jpeg');
   });
 });
