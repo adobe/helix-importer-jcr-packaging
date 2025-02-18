@@ -74,31 +74,6 @@ describe('jcr-path-mapping', () => {
     ).to.deep.equal(expectedXmlDom.documentElement.outerHTML);
   });
 
-  // check the reference asset paths are lowercased in the processed xml
-  it('verify lower case asset paths in xml', async () => {
-    const originalXml = await loadFile(ORIGINAL_XML_PATH);
-    const expectedProcessedXml = await loadFile(PROCESS_XML_PATH);
-
-    // Init image URL map (original urls only, jcr paths will be added by updateAssetReferences)
-    const imageUrlMapping = await getImageUrlKeysMap();
-    const actualProcessedXml = await updateAssetReferences(
-      originalXml,
-      PAGE_URL,
-      'PLUSH', // post conversion, should be lowercased
-      imageUrlMapping,
-    );
-
-    // Parse both XMLs using jsdom
-    const actualXmlDom = getParsedXml(actualProcessedXml);
-    const expectedXmlDom = getParsedXml(expectedProcessedXml);
-
-    // expect that processed XML matches expected XML
-    expect(
-      actualXmlDom.documentElement.outerHTML,
-      'Processed XML does not match expected XML',
-    ).to.deep.equal(expectedXmlDom.documentElement.outerHTML);
-  });
-
   // compare the generated image mapping with the expected image mapping
   it('verify generated image mapping', async () => {
     const originalXml = await loadFile(ORIGINAL_XML_PATH);

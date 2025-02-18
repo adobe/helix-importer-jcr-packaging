@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 import he from 'he';
 import {
-  getFilterXml, getJcrPagePath, getPackageName, getParsedXml,
+  getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
   getPropertiesXml, traverseAndUpdateAssetReferences,
 } from '../../src/package/packaging.utils.js';
 
@@ -53,6 +53,20 @@ describe('packaging-utils', () => {
     pages = [{ path: '/content/site/a' }, { path: '/content/site/b' }];
     packageName = getPackageName(pages, 'xwalk');
     expect(packageName).to.equal('xwalk');
+  });
+
+  // write a test to cover getJcrAssetPath:
+  // 1. test lowercased asset referernces
+  // 2. should not add an extra .jpg to the URL
+  it('test the getJcrAssetPath', () => {
+    const assetUrl = new URL('https://xyz/content/dam/doe/sws/image/IMG-20241017-WA0000.jpg.thumb.1280.1280.jpg');
+    const assetFolderName = 'DOE-Sample-Site-1';
+
+    const result = getJcrAssetPath(assetUrl, assetFolderName);
+
+    // Expected output
+    const expected = '/content/dam/doe-sample-site-1/doe/sws/image/img-20241017-wa0000.jpg.thumb.1280.1280.jpg';
+    expect(result).to.equal(expected);
   });
 
   // write a test to cover getJcrPagePath

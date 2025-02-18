@@ -148,9 +148,15 @@ export const getJcrPagePath = (path, siteFolderName) => {
  * @param {string} assetFolderName - The name of the asset folder in AEM
  * @returns the JCR path for the asset
  */
-const getJcrAssetPath = (assetUrl, assetFolderName) => {
-  const extension = (assetUrl.pathname.includes('.')) ? `.${assetUrl.pathname.split('.').pop()}` : '';
-  let path = assetUrl.pathname.replace(extension, '');
+export const getJcrAssetPath = (assetUrl, assetFolderName) => {
+  let path = assetUrl.pathname;
+
+  // Extract file extension (only the last part)
+  const lastDotIndex = path.lastIndexOf('.');
+  const extension = (lastDotIndex !== -1) ? path.substring(lastDotIndex) : '';
+
+  // Remove only the last extension from path
+  path = path.substring(0, lastDotIndex);
 
   if (path.startsWith('/content/dam/')) {
     // replace the 3rd token with the asset folder name
