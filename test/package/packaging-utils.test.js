@@ -111,8 +111,8 @@ describe('packaging-utils', () => {
 
     // for each block test to see if the attribute has been updated
     expect(blocks[0].getAttribute('hero_image')).to.equal('/content/dam/xwalk/media1_a.jpeg');
-    expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderXYZ/c.png');
-    expect(blocks1[0].getElementsByTagName('item_1')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderXYZ/folder/d.png');
+    expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
+    expect(blocks1[0].getElementsByTagName('item_1')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/folder/d.png');
     expect(image[0].getAttribute('fileReference')).to.equal('/content/dam/xwalk/folder/e.png');
 
     // test to see if the text has been updated

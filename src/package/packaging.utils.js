@@ -141,6 +141,9 @@ export const getJcrPagePath = (path, siteFolderName) => {
 
 /**
  * Get the JCR path for an asset.
+ * NOTE: We use lower case for the asset folder names, since in AEM DAM
+ * paths are case-sensitive; AEM automatically generates a JCR node name
+ * that follows a lowercase, so reference paths should also use lower case.
  * @param {URL} assetUrl - The URL of the asset
  * @param {string} assetFolderName - The name of the asset folder in AEM
  * @returns the JCR path for the asset
@@ -155,14 +158,13 @@ const getJcrAssetPath = (assetUrl, assetFolderName) => {
     // insert the assetFolderName in index position 3 ("", /content, /dam)
     // and move everything after over resulting in /content/dam/<site>/<asset_path>
     tokens.splice(3, 0, assetFolderName);
-    return `${tokens.join('/')}${extension}`;
+    return `${tokens.join('/')}${extension}`.toLowerCase();
   }
 
   const suffix = '';
   // replace media_ with media1_ in path to avoid conflicts with the media folder
   path = path.replace('/media_', '/media1_');
-
-  return `/content/dam/${assetFolderName}${path}${suffix}${extension}`;
+  return `/content/dam/${assetFolderName}${path}${suffix}${extension}`.toLowerCase();
 };
 
 /**
