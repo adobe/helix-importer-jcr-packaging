@@ -30,15 +30,15 @@ const getImageUrlMap = async () => loadFile(IMAGE_MAPPING_PATH)
   // eslint-disable-next-line no-console
   .catch((error) => console.error('Error loading JSON:', error));
 
-// Helper function to initialize image URL keys map from test data
-const getImageUrlKeysMap = async () => loadFile(IMAGE_MAPPING_PATH)
+// Helper function to initialize an array of image URL keys from test data
+const getImageUrlKeysArray = async () => loadFile(IMAGE_MAPPING_PATH)
   .then((response) => JSON.parse(response))
-  .then((data) => new Map(Object.keys(data).map((key) => [key, ''])))
+  .then((data) => Object.keys(data))
   // eslint-disable-next-line no-console
   .catch((error) => console.error('Error loading JSON:', error));
 
-// Test suite for jcr-path-mapping
-describe('jcr-path-mapping', () => {
+// Test suite for packaging.js
+describe('packaging', () => {
   let outdir;
 
   beforeEach(() => {
@@ -55,12 +55,13 @@ describe('jcr-path-mapping', () => {
     const expectedProcessedXml = await loadFile(PROCESS_XML_PATH);
 
     // Init image URL map (original urls only, jcr paths will be added by updateAssetReferences)
-    const imageUrlMapping = await getImageUrlKeysMap();
+    const imageUrls = await getImageUrlKeysArray();
+    const actualImageUrlMapping = new Map(imageUrls.map((url) => [url, '']));
     const actualProcessedXml = await updateAssetReferences(
       originalXml,
       PAGE_URL,
       ASSET_FOLDER_NAME,
-      imageUrlMapping,
+      actualImageUrlMapping,
     );
 
     // Parse both XMLs using jsdom
@@ -79,7 +80,8 @@ describe('jcr-path-mapping', () => {
     const originalXml = await loadFile(ORIGINAL_XML_PATH);
     const expectedImageUrlMapping = await getImageUrlMap();
     // Init image URL map (original urls only, jcr paths will be added by updateAssetReferences)
-    const actualImageUrlMapping = await getImageUrlKeysMap();
+    const imageUrls = await getImageUrlKeysArray();
+    const actualImageUrlMapping = new Map(imageUrls.map((url) => [url, '']));
 
     await updateAssetReferences(originalXml, PAGE_URL, ASSET_FOLDER_NAME, actualImageUrlMapping);
 
@@ -100,12 +102,12 @@ describe('jcr-path-mapping', () => {
 
   it('should handle XML parsing errors in updateAssetReferences', async () => {
     const invalidXml = '<invalid><xml>';
-    const imageUrlMapping = await getImageUrlKeysMap();
+    const imageUrls = await getImageUrlKeysArray();
     const result = await updateAssetReferences(
       invalidXml,
       PAGE_URL,
       ASSET_FOLDER_NAME,
-      imageUrlMapping,
+      imageUrls,
     );
     expect(result, 'Expected the original invalid XML to be returned').to.equal(invalidXml);
   });
@@ -113,11 +115,11 @@ describe('jcr-path-mapping', () => {
   it('should create a JCR package with empty pages', async () => {
     const dir = {}; // Mock directory handle
     const pages = [];
-    const imageMappings = new Map();
+    const imageUrls = [];
     const siteFolderName = 'site';
     const assetFolderName = 'assets';
 
-    await createJcrPackage(dir, pages, imageMappings, siteFolderName, assetFolderName);
+    await createJcrPackage(dir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
   });
 
@@ -129,11 +131,11 @@ describe('jcr-path-mapping', () => {
         url: PAGE_URL,
       },
     ];
-    const imageMappings = await getImageUrlKeysMap();
+    const imageUrls = await getImageUrlKeysArray();
     const siteFolderName = 'site';
     const assetFolderName = 'assets';
 
-    await createJcrPackage(outdir, pages, imageMappings, siteFolderName, assetFolderName);
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
   });
 
@@ -145,11 +147,11 @@ describe('jcr-path-mapping', () => {
         url: PAGE_URL,
       },
     ];
-    const imageMappings = await getImageUrlKeysMap();
+    const imageUrls = await getImageUrlKeysArray();
     const siteFolderName = 'site';
     const assetFolderName = 'assets';
 
-    await createJcrPackage(outdir, pages, imageMappings, siteFolderName, assetFolderName);
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
   });
 });

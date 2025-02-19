@@ -11,7 +11,7 @@
  */
 /* eslint-env mocha */
 import { expect } from 'chai';
-import { getImageUrlsFromMarkdown, sanitizeImageMappings } from '../../src/index.js';
+import { getImageUrlsFromMarkdown, sanitizeImageMappings } from '../../src/package/image-mapping.js';
 
 describe('getImageUrlsFromMarkdown', () => {
   it('should return an array of image urls (reference urls)', () => {

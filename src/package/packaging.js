@@ -22,8 +22,10 @@ import {
   traverseAndUpdateAssetReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
+import { sanitizeImageMappings } from './image-mapping.js';
 
 let jcrPages = [];
+const IMAGE_MAPPING_FILE = 'image-mappings.json';
 
 const init = () => {
   jcrPages = [];
@@ -119,6 +121,22 @@ const getEmptyAncestorPages = (pages) => {
 };
 
 /**
+ * Sanitizes (deleting entries without jcr path mapping) and saves the image mappings to a file.
+ * @param {Array<string>} imageUrls - An array of image urls that were found in the markdown.
+ * @param {*} outputDirectory - The directory handle
+ */
+const sanitizeAndSaveImageMappings = async (imageMappings, outputDirectory) => {
+  // Sanitize the image mappings
+  const sanitizedMappings = sanitizeImageMappings(imageMappings);
+
+  // Convert Map to a plain object
+  const obj = Object.fromEntries(sanitizedMappings);
+
+  // Save the updated image mapping content into a file
+  await saveFile(outputDirectory, IMAGE_MAPPING_FILE, JSON.stringify(obj, null, 2));
+};
+
+/**
  * Creates a JCR content package from a directory containing pages.
  * @param {*} outputDirectory - The directory handle
  * @param {Array} pages - An array of pages
@@ -143,11 +161,8 @@ export const createJcrPackage = async (
   const zip = new JSZip();
   const prefix = 'jcr';
 
-  const imageMappings = new Map();
-  // add the images as keys to the map
-  imageUrls.forEach((url) => {
-    imageMappings.set(url, '');
-  });
+  // create a map using the provided asset urls as keys (values will be populated later)
+  const imageMappings = new Map(imageUrls.map((url) => [url, '']));
 
   // add the pages
   jcrPages = await getJcrPages(pages, siteFolderName, assetFolderName, imageMappings);
@@ -177,9 +192,5 @@ export const createJcrPackage = async (
   await zip.generateAsync({ type: outputType })
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
-  // Convert Map to plain object
-  const obj = Object.fromEntries(imageMappings);
-
-  // Save the updated image mapping content into a file in the output directory
-  await saveFile(outputDirectory, 'image-mapping.json', JSON.stringify(obj, null, 2));
+  await sanitizeAndSaveImageMappings(imageMappings, outputDirectory);
 };
