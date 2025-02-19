@@ -68,13 +68,11 @@ describe('packaging-utils', () => {
     assetUrl = new URL('https://example.com/doe/sws/.hiddenfile');
     expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/.hiddenfile';
     actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
-    console.log(actualJcrPath);
     expect(actualJcrPath).to.equal(expectedJcrPath);
 
     assetUrl = new URL('https://example.com/blob/shdckh234y4');
     expectedJcrPath = '';
     actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
-    console.log(actualJcrPath);
     expect(actualJcrPath).to.equal(expectedJcrPath);
   });
 

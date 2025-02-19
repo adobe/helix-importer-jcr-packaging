@@ -80,7 +80,18 @@ const getImageUrlsFromMarkdown = (markdownContent) => {
   }
 };
 
+/**
+ * Function to sanitize the image mappings.
+ * Delete all entries with empty values (meaning that they have not been used in any jcr page).
+ * @param {Map} imageMap - The image mapping
+ * @returns {Map} The sanitized image mapping
+ */
+const sanitizeImageMappings = (imageMap) => (
+  new Map([...imageMap].filter((entry) => entry[1] != null && entry[1] !== ''))
+);
+
 export {
   // eslint-disable-next-line import/prefer-default-export
   getImageUrlsFromMarkdown,
+  sanitizeImageMappings,
 };
