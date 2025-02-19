@@ -150,11 +150,15 @@ export const getJcrPagePath = (path, siteFolderName) => {
  */
 export const getJcrAssetPath = (assetUrl, assetFolderName) => {
   let path = assetUrl.pathname;
-
+  let jcrAssetPath;
   // Extract file extension (only the last part)
   const lastDotIndex = path.lastIndexOf('.');
-  const extension = (lastDotIndex !== -1) ? path.substring(lastDotIndex) : '';
 
+  if (lastDotIndex === -1 || lastDotIndex < path.lastIndexOf('/')) {
+    return ''; // No valid extension
+  }
+
+  const extension = path.substring(lastDotIndex);
   // Remove only the last extension from path
   path = path.substring(0, lastDotIndex);
 
@@ -164,13 +168,14 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
     // insert the assetFolderName in index position 3 ("", /content, /dam)
     // and move everything after over resulting in /content/dam/<site>/<asset_path>
     tokens.splice(3, 0, assetFolderName);
-    return `${tokens.join('/')}${extension}`.toLowerCase();
+    jcrAssetPath = `${tokens.join('/')}${extension}`;
+  } else {
+    const suffix = '';
+    // replace media_ with media1_ in path to avoid conflicts with the media folder
+    path = path.replace('/media_', '/media1_');
+    jcrAssetPath = `/content/dam/${assetFolderName}${path}${suffix}${extension}`.toLowerCase();
   }
-
-  const suffix = '';
-  // replace media_ with media1_ in path to avoid conflicts with the media folder
-  path = path.replace('/media_', '/media1_');
-  return `/content/dam/${assetFolderName}${path}${suffix}${extension}`.toLowerCase();
+  return jcrAssetPath.toLowerCase();
 };
 
 /**
@@ -265,6 +270,10 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       keys.forEach((key) => {
         if (attrValue.includes(key)) {
           const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
+          // if no jcr adjusted path is returned, skip replacing the reference - let user handle it
+          if (!jcrAssetPath) {
+            return;
+          }
           // update the map with the new jcr path
           updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
           // update the attribute value with the new jcr path

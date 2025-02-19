@@ -59,14 +59,23 @@ describe('packaging-utils', () => {
   // 1. test lowercased asset referernces
   // 2. should not add an extra .jpg to the URL
   it('test the getJcrAssetPath', () => {
-    const assetUrl = new URL('https://xyz/content/dam/doe/sws/image/IMG-20241017-WA0000.jpg.thumb.1280.1280.jpg');
     const assetFolderName = 'DOE-Sample-Site-1';
+    let assetUrl = new URL('https://xyz/content/dam/doe/sws/image/IMG-20241017-WA0000.jpg.thumb.1280.1280.jpg');
+    let expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/image/img-20241017-wa0000.jpg.thumb.1280.1280.jpg';
+    let actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
 
-    const result = getJcrAssetPath(assetUrl, assetFolderName);
+    assetUrl = new URL('https://example.com/doe/sws/.hiddenfile');
+    expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/.hiddenfile';
+    actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    console.log(actualJcrPath);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
 
-    // Expected output
-    const expected = '/content/dam/doe-sample-site-1/doe/sws/image/img-20241017-wa0000.jpg.thumb.1280.1280.jpg';
-    expect(result).to.equal(expected);
+    assetUrl = new URL('https://example.com/blob/shdckh234y4');
+    expectedJcrPath = '';
+    actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    console.log(actualJcrPath);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
   });
 
   // write a test to cover getJcrPagePath
