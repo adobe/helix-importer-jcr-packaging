@@ -59,19 +59,30 @@ describe('packaging-utils', () => {
   // 1. test lowercased asset referernces
   // 2. should not add an extra .jpg to the URL
   it('test the getJcrAssetPath', () => {
-    const assetFolderName = 'DOE-Sample-Site-1';
+    let assetFolderName = 'DOE-Sample-Site-1';
+
+    // ensure generated path is in lower case, and has no double extension
     let assetUrl = new URL('https://xyz/content/dam/doe/sws/image/IMG-20241017-WA0000.jpg.thumb.1280.1280.jpg');
     let expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/image/img-20241017-wa0000.jpg.thumb.1280.1280.jpg';
     let actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
     expect(actualJcrPath).to.equal(expectedJcrPath);
 
+    // ensure hidden file handling
     assetUrl = new URL('https://example.com/doe/sws/.hiddenfile');
     expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/.hiddenfile';
     actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
     expect(actualJcrPath).to.equal(expectedJcrPath);
 
+    // shouldn't generate a path if resource url has extension
     assetUrl = new URL('https://example.com/blob/shdckh234y4');
     expectedJcrPath = '';
+    actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
+
+    // ensure removal of assetFolderName if present, before reinserting to avoid duplication
+    assetUrl = new URL('https://example.com/content/dam/doe/sws/toys/foo/card/toy.png');
+    assetFolderName = 'doe/sws/toys/foo';
+    expectedJcrPath = '/content/dam/doe/sws/toys/foo/card/toy.png';
     actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
     expect(actualJcrPath).to.equal(expectedJcrPath);
   });

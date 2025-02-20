@@ -40,7 +40,7 @@ const addPage = async (page, dir, prefix, zip) => {
  * Updates the asset references in given xml, to point to their respective JCR paths
  * @param xml - The xml content of the page
  * @param pageUrl - The url of the site page
- * @param assetFolderName - The name of the asset folder in AEM
+ * @param assetFolderName - The name of the asset folder(s) in AEM
  * @param imageMappings - A map to store the image urls and their corresponding jcr paths
  * @returns {Promise<*|string>} - The updated xml content
  */
@@ -141,8 +141,8 @@ const sanitizeAndSaveImageMappings = async (imageMappings, outputDirectory) => {
  * @param {*} outputDirectory - The directory handle
  * @param {Array} pages - An array of pages
  * @param {Array<string>} imageUrls - An array of image urls that were found in the markdown.
- * @param {string} siteFolderName - The name of the site folder in AEM
- * @param {string} assetFolderName - The name of the asset folder in AEM
+ * @param {string} siteFolderName - The name of the site folder(s) in AEM
+ * @param {string} assetFolderName - The name of the asset folder(s) in AEM
  * @returns {Promise} The file handle for the generated package.
  */
 export const createJcrPackage = async (

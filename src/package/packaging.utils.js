@@ -109,7 +109,7 @@ export const getFilterXml = (jcrPages) => {
  * followed by the page name. If there are multiple pages, the package name
  * will be the site folder name.
  * @param {Array<Page>} pages the pages to be included in the package.
- * @param {string} siteFolderName the name of the site folder in AEM.
+ * @param {string} siteFolderName the name of the site folder(s) in AEM.
  * @returns {string} the package name.
  */
 export const getPackageName = (pages, siteFolderName) => {
@@ -123,7 +123,7 @@ export const getPackageName = (pages, siteFolderName) => {
 /**
  * Get the JCR page path based on the site folder name and the path.
  * @param {string} path the path of the page
- * @param {string} siteFolderName the name of the site folder in AEM
+ * @param {string} siteFolderName the name of the site folder(s) in AEM
  * @returns the JCR page path
  */
 export const getJcrPagePath = (path, siteFolderName) => {
@@ -145,7 +145,7 @@ export const getJcrPagePath = (path, siteFolderName) => {
  * paths are case-sensitive; AEM automatically generates a JCR node name
  * that follows a lowercase, so reference paths should also use lower case.
  * @param {URL} assetUrl - The URL of the asset
- * @param {string} assetFolderName - The name of the asset folder in AEM
+ * @param {string} assetFolderName - The name of the asset folder(s) in AEM
  * @returns the JCR path for the asset
  */
 export const getJcrAssetPath = (assetUrl, assetFolderName) => {
@@ -163,11 +163,21 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
   path = path.substring(0, lastDotIndex);
 
   if (path.startsWith('/content/dam/')) {
-    // replace the 3rd token with the asset folder name
     const tokens = path.split('/');
+    const assetFolderTokens = assetFolderName.split('/');
+
+    // Find and remove existing occurrence of assetFolderName
+    for (let i = 3; i <= tokens.length - assetFolderTokens.length; i += 1) {
+      if (tokens.slice(i, i + assetFolderTokens.length).join('/') === assetFolderName) {
+        tokens.splice(i, assetFolderTokens.length);
+        break;
+      }
+    }
+
     // insert the assetFolderName in index position 3 ("", /content, /dam)
     // and move everything after over resulting in /content/dam/<site>/<asset_path>
-    tokens.splice(3, 0, assetFolderName);
+    tokens.splice(3, 0, ...assetFolderTokens);
+
     jcrAssetPath = `${tokens.join('/')}${extension}`;
   } else {
     const suffix = '';
@@ -182,7 +192,7 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
  * Get the JCR path for a asset reference.
  * @param {string} assetReference the asset reference
  * @param {string} pageUrl the URL of the page
- * @param {string} assetFolderName the name of the asset folder in AEM
+ * @param {string} assetFolderName the name of the asset folder(s) in AEM
  * @returns the JCR path for the file reference
  */
 const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
@@ -256,7 +266,7 @@ function updateJcrAssetMap(jcrAssetMap, originalPath, updatedAssetPath, pageUrl)
  * Traverse the DOM tree and update the asset references to point to the JCR paths.
  * @param {*} node - The node to traverse
  * @param {string} pageUrl - The URL of the page
- * @param {string} assetFolderName - The name of the asset folder in AEM
+ * @param {string} assetFolderName - The name of the asset folder(s) in AEM
  * @param {Map} jcrAssetMap - A map of asset references to their corresponding JCR paths
  */
 export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName, jcrAssetMap) => {
