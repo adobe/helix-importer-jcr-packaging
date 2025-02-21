@@ -11,7 +11,7 @@
  */
 /* eslint-env mocha */
 import { expect } from 'chai';
-import { getAssetUrlsFromMarkdown, sanitizeAssetMappings } from '../../src/package/asset-mapping.js';
+import { getImageUrlsFromMarkdown, sanitizeImageMappings } from '../../src/package/image-mapping.js';
 
 describe('getImageUrlsFromMarkdown', () => {
   it('should return an array of image urls (reference urls)', () => {
@@ -25,7 +25,7 @@ describe('getImageUrlsFromMarkdown', () => {
 [image0]: https://aem.live/car.jpeg
 [image1]: https://aem.live/car2.jpeg`;
 
-    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('https://aem.live/car.jpeg');
     expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
@@ -39,25 +39,16 @@ describe('getImageUrlsFromMarkdown', () => {
 | ![Car 2](https://aem.live/car2.jpeg)     |
 +------------------------------------------+`;
 
-    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('https://aem.live/car.jpeg');
     expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
   });
 
-  it('should return an non-image asset (pdf) url', () => {
-    const markdownContent = `Click [here](/content/dam/doe/foo/bar.pdf) to download the handy guide.
-    Also check [here](https://example.live/siteFoo.html).`;
-
-    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
-    expect(imageUrls).to.have.lengthOf(1);
-    expect(imageUrls[0]).to.equal('/content/dam/doe/foo/bar.pdf');
-  });
-
   it('should return an array with no image urls', () => {
     const markdownContent = 'This is a markdown file with no images.';
 
-    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(0);
   });
 
@@ -71,7 +62,7 @@ describe('getImageUrlsFromMarkdown', () => {
 
 [image0]: /test/car2.jpeg`;
 
-    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
+    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('/car.jpeg');
     expect(imageUrls[1]).to.equal('/test/car2.jpeg');
@@ -86,7 +77,7 @@ describe('getImageUrlsFromMarkdown', () => {
       ['key5', 'value5'],
     ]);
 
-    const result = sanitizeAssetMappings(imageMap);
+    const result = sanitizeImageMappings(imageMap);
 
     expect(result.size).to.equal(2);
     expect(result.has('key1')).to.equal(true);
@@ -103,7 +94,7 @@ describe('getImageUrlsFromMarkdown', () => {
       ['key3', undefined],
     ]);
 
-    const result = sanitizeAssetMappings(imageMap);
+    const result = sanitizeImageMappings(imageMap);
 
     expect(result.size).to.equal(0);
   });

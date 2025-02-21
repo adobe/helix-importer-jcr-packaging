@@ -18,9 +18,6 @@ const imageRegex = /!\[([^\]]*)]\(([^) "]+)(?: *"([^"]*)")?\)|!\[([^\]]*)]\[([^\
 // Regex for reference definitions
 const referenceRegex = /\[([^\]]+)]:\s*(\S+)/g;
 
-// Regex for non-image asset links (PDFs, videos, docs, etc.)
-const nonImageAssetRegex = /(?:\[(.*?)\]|\[.*?\])\(([^)]+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv|mp4|mov|avi|wmv|mkv|flv|webm))\)|\[(.*?)\]:\s*(\S+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv|mp4|mov|avi|wmv|mkv|flv|webm))/gi;
-
 /**
  * Function to find reference definitions in a markdown file.
  *
@@ -39,21 +36,21 @@ const findReferenceDefinitionsInMarkdown = (markdownContent) => {
 };
 
 /**
- * Function to scan for assets in a markdown file.
+ * Function to scan for images in a markdown file.
  *
  * @param markdownContent - The content of the markdown file
- * @returns {Array<string>} A Map of asset urls as key
+ * @returns {Array<string>} A Map of image urls as key
  */
-const findAssetsInMarkdown = (markdownContent) => {
+const findImagesInMarkdown = (markdownContent) => {
   const references = findReferenceDefinitionsInMarkdown(markdownContent);
 
-  const assetUrls = [];
+  const imageUrls = [];
 
   // Identify each image url in the markdown content
   let match;
-  let url;
   // eslint-disable-next-line no-cond-assign
   while ((match = imageRegex.exec(markdownContent)) !== null) {
+    let url;
     if (match[2]) { // Inline image
       // eslint-disable-next-line prefer-destructuring
       url = match[2];
@@ -61,49 +58,40 @@ const findAssetsInMarkdown = (markdownContent) => {
       url = references[match[5]] || null; // Resolve URL from reference map
     }
     if (url) {
-      assetUrls.push(url);
+      imageUrls.push(url);
     }
   }
 
-  // Find and add only non-image asset links
-  // eslint-disable-next-line no-cond-assign
-  while ((match = nonImageAssetRegex.exec(markdownContent)) !== null) {
-    url = match[2] || match[3];
-    if (url) {
-      assetUrls.push(url);
-    }
-  }
-
-  return assetUrls;
+  return imageUrls;
 };
 
 /**
- * Get the list asset urls present in the markdown.
+ * Get the list image urls present in the markdown.
  * @param {string} markdownContent - The content of the markdown file
- * @returns {Array<string>} An array of asset urls.
+ * @returns {Array<string>} An array of image urls.
  */
-const getAssetUrlsFromMarkdown = (markdownContent) => {
+const getImageUrlsFromMarkdown = (markdownContent) => {
   try {
-    return findAssetsInMarkdown(markdownContent);
+    return findImagesInMarkdown(markdownContent);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.warn('Error getting asset urls from markdown:', error);
+    console.warn('Error getting image urls from markdown:', error);
     return [];
   }
 };
 
 /**
- * Function to sanitize the asset url mappings.
+ * Function to sanitize the image mappings.
  * Delete all entries with empty values (meaning that they have not been used in any jcr page).
- * @param {Map} assetMap - The asset url mapping
- * @returns {Map} The sanitized asset url mapping
+ * @param {Map} imageMap - The image mapping
+ * @returns {Map} The sanitized image mapping
  */
-const sanitizeAssetMappings = (assetMap) => (
-  new Map([...assetMap].filter((entry) => entry[1] != null && entry[1] !== ''))
+const sanitizeImageMappings = (imageMap) => (
+  new Map([...imageMap].filter((entry) => entry[1] != null && entry[1] !== ''))
 );
 
 export {
   // eslint-disable-next-line import/prefer-default-export
-  getAssetUrlsFromMarkdown,
-  sanitizeAssetMappings,
+  getImageUrlsFromMarkdown,
+  sanitizeImageMappings,
 };
