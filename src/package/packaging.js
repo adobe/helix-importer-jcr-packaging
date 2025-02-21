@@ -22,7 +22,6 @@ import {
   traverseAndUpdateAssetReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
-import { sanitizeImageMappings } from './image-mapping.js';
 
 let jcrPages = [];
 const IMAGE_MAPPING_FILE = 'image-mappings.json';
@@ -38,10 +37,10 @@ const addPage = async (page, dir, prefix, zip) => {
 
 /**
  * Updates the asset references in given xml, to point to their respective JCR paths
- * @param xml - The xml content of the page
- * @param pageUrl - The url of the site page
- * @param assetFolderName - The name of the asset folder(s) in AEM
- * @param imageMappings - A map to store the image urls and their corresponding jcr paths
+ * @param {string} xml - The xml content of the page
+ * @param {string} pageUrl - The url of the site page
+ * @param {string} assetFolderName - The name of the asset folder(s) in AEM
+ * @param {Map} imageMappings - A map to store the image urls and their corresponding jcr paths
  * @returns {Promise<*|string>} - The updated xml content
  */
 export const updateAssetReferences = async (xml, pageUrl, assetFolderName, imageMappings) => {
@@ -121,16 +120,13 @@ const getEmptyAncestorPages = (pages) => {
 };
 
 /**
- * Sanitizes (deleting entries without jcr path mapping) and saves the image mappings to a file.
- * @param {Array<string>} imageUrls - An array of image urls that were found in the markdown.
+ * Save the image mappings to a file.
+ * @param {Map} imageMappings - A map of image urls and their corresponding jcr paths
  * @param {*} outputDirectory - The directory handle
  */
-const sanitizeAndSaveImageMappings = async (imageMappings, outputDirectory) => {
-  // Sanitize the image mappings
-  const sanitizedMappings = sanitizeImageMappings(imageMappings);
-
+const saveImageMappings = async (imageMappings, outputDirectory) => {
   // Convert Map to a plain object
-  const obj = Object.fromEntries(sanitizedMappings);
+  const obj = Object.fromEntries(imageMappings);
 
   // Save the updated image mapping content into a file
   await saveFile(outputDirectory, IMAGE_MAPPING_FILE, JSON.stringify(obj, null, 2));
@@ -192,5 +188,5 @@ export const createJcrPackage = async (
   await zip.generateAsync({ type: outputType })
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
-  await sanitizeAndSaveImageMappings(imageMappings, outputDirectory);
+  await saveImageMappings(imageMappings, outputDirectory);
 };
