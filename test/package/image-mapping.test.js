@@ -12,12 +12,12 @@
 /* eslint-env mocha */
 import { readFile } from 'fs/promises';
 import { expect } from 'chai';
-import { getImageUrlsFromMarkdown } from '../../src/package/image-mapping.js';
+import { getAssetUrlsFromMarkdown } from '../../src/package/asset-mapping.js';
 
 const loadFile = async (file) => readFile(new URL(file, import.meta.url), 'utf-8');
 
-describe('getImageUrlsFromMarkdown', () => {
-  it('should return an array of image urls (reference urls)', () => {
+describe('getAssetUrlsFromMarkdown', () => {
+  it('should return an array of asset urls (reference urls)', () => {
     const markdownContent = `+-----------------------+
 | Hero                  |
 +=======================+
@@ -28,13 +28,13 @@ describe('getImageUrlsFromMarkdown', () => {
 [image0]: https://aem.live/car.jpeg
 [image1]: https://aem.live/car2.jpeg`;
 
-    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('https://aem.live/car.jpeg');
     expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
   });
 
-  it('should return an array of image urls (inlined urls)', () => {
+  it('should return an array of asset urls (inlined urls)', () => {
     const markdownContent = `+------------------------------------------+
 | Hero                                     |
 +==========================================+
@@ -42,16 +42,25 @@ describe('getImageUrlsFromMarkdown', () => {
 | ![Car 2](https://aem.live/car2.jpeg)     |
 +------------------------------------------+`;
 
-    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('https://aem.live/car.jpeg');
     expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
   });
 
+  it('should return an non-image asset (pdf) url', () => {
+    const markdownContent = `Click [here](/content/dam/doe/foo/bar.pdf) to download the handy guide.
+    Also check [here](https://example.live/siteFoo.html).`;
+
+    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
+    expect(imageUrls).to.have.lengthOf(1);
+    expect(imageUrls[0]).to.equal('/content/dam/doe/foo/bar.pdf');
+  });
+
   it('should return an array with no image urls', () => {
     const markdownContent = 'This is a markdown file with no images.';
 
-    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(0);
   });
 
@@ -65,16 +74,16 @@ describe('getImageUrlsFromMarkdown', () => {
 
 [image0]: /test/car2.jpeg`;
 
-    const imageUrls = getImageUrlsFromMarkdown(markdownContent);
+    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('/car.jpeg');
     expect(imageUrls[1]).to.equal('/test/car2.jpeg');
   });
 
-  // should call createImageMappingFile with the correct arguments
-  it('test getImageUrlsFromMarkdown', async () => {
+  // should call getAssetUrlsFromMarkdown with the correct arguments
+  it('test getAssetUrlsFromMarkdown', async () => {
     const markdown = await loadFile('../fixtures/mystique/hero.md');
-    const imageUrl = await getImageUrlsFromMarkdown(markdown);
+    const imageUrl = await getAssetUrlsFromMarkdown(markdown);
     expect(imageUrl).to.be.an('array');
     expect(imageUrl).to.have.lengthOf(1);
   });
