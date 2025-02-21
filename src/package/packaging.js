@@ -22,10 +22,10 @@ import {
   traverseAndUpdateAssetReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
-import { sanitizeImageMappings } from './image-mapping.js';
+import { sanitizeAssetMappings } from './asset-mapping.js';
 
 let jcrPages = [];
-const IMAGE_MAPPING_FILE = 'image-mappings.json';
+const ASSET_MAPPING_FILE = 'asset-mappings.json';
 
 const init = () => {
   jcrPages = [];
@@ -41,10 +41,10 @@ const addPage = async (page, dir, prefix, zip) => {
  * @param xml - The xml content of the page
  * @param pageUrl - The url of the site page
  * @param assetFolderName - The name of the asset folder(s) in AEM
- * @param imageMappings - A map to store the image urls and their corresponding jcr paths
+ * @param assetMappings - A map to store the asset urls and their corresponding jcr paths
  * @returns {Promise<*|string>} - The updated xml content
  */
-export const updateAssetReferences = async (xml, pageUrl, assetFolderName, imageMappings) => {
+export const updateAssetReferences = async (xml, pageUrl, assetFolderName, assetMappings) => {
   let doc;
   try {
     doc = getParsedXml(xml);
@@ -55,14 +55,14 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderName, image
   }
 
   // Start traversal from the document root and update the asset references
-  traverseAndUpdateAssetReferences(doc.documentElement, pageUrl, assetFolderName, imageMappings);
+  traverseAndUpdateAssetReferences(doc.documentElement, pageUrl, assetFolderName, assetMappings);
 
   const serializer = new XMLSerializer();
   return serializer.serializeToString(doc);
 };
 
 // eslint-disable-next-line max-len
-export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageMappings) => Promise.all(pages.map(async (page) => ({
+export const getJcrPages = async (pages, siteFolderName, assetFolderName, assetMappings) => Promise.all(pages.map(async (page) => ({
   path: page.path,
   sourceXml: page.data,
   pageProperties: getPageProperties(page.data),
@@ -71,7 +71,7 @@ export const getJcrPages = async (pages, siteFolderName, assetFolderName, imageM
     page.data,
     page.url,
     assetFolderName,
-    imageMappings,
+    assetMappings,
   ),
   jcrPath: getJcrPagePath(page.path, siteFolderName),
   contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
@@ -121,26 +121,26 @@ const getEmptyAncestorPages = (pages) => {
 };
 
 /**
- * Sanitizes (deleting entries without jcr path mapping) and saves the image mappings to a file.
- * @param {Array<string>} imageUrls - An array of image urls that were found in the markdown.
+ * Sanitizes (deleting entries without jcr path mapping) and saves the asset mappings to a file.
+ * @param {*} assetMappings - The asset mappings
  * @param {*} outputDirectory - The directory handle
  */
-const sanitizeAndSaveImageMappings = async (imageMappings, outputDirectory) => {
-  // Sanitize the image mappings
-  const sanitizedMappings = sanitizeImageMappings(imageMappings);
+const sanitizeAndSaveAssetMappings = async (assetMappings, outputDirectory) => {
+  // Sanitize the asset mappings
+  const sanitizedMappings = sanitizeAssetMappings(assetMappings);
 
   // Convert Map to a plain object
   const obj = Object.fromEntries(sanitizedMappings);
 
-  // Save the updated image mapping content into a file
-  await saveFile(outputDirectory, IMAGE_MAPPING_FILE, JSON.stringify(obj, null, 2));
+  // Save the updated asset mapping content into a file
+  await saveFile(outputDirectory, ASSET_MAPPING_FILE, JSON.stringify(obj, null, 2));
 };
 
 /**
  * Creates a JCR content package from a directory containing pages.
  * @param {*} outputDirectory - The directory handle
  * @param {Array} pages - An array of pages
- * @param {Array<string>} imageUrls - An array of image urls that were found in the markdown.
+ * @param {Array<string>} assetUrls - An array of asset urls that were found in the markdown.
  * @param {string} siteFolderName - The name of the site folder(s) in AEM
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
  * @returns {Promise} The file handle for the generated package.
@@ -148,7 +148,7 @@ const sanitizeAndSaveImageMappings = async (imageMappings, outputDirectory) => {
 export const createJcrPackage = async (
   outputDirectory,
   pages,
-  imageUrls,
+  assetUrls,
   siteFolderName,
   assetFolderName,
 ) => {
@@ -162,10 +162,10 @@ export const createJcrPackage = async (
   const prefix = 'jcr';
 
   // create a map using the provided asset urls as keys (values will be populated later)
-  const imageMappings = new Map(imageUrls.map((url) => [url, '']));
+  const assetMappings = new Map(assetUrls.map((url) => [url, '']));
 
   // add the pages
-  jcrPages = await getJcrPages(pages, siteFolderName, assetFolderName, imageMappings);
+  jcrPages = await getJcrPages(pages, siteFolderName, assetFolderName, assetMappings);
   for (let i = 0; i < jcrPages.length; i += 1) {
     const page = jcrPages[i];
     // eslint-disable-next-line no-await-in-loop
@@ -192,5 +192,5 @@ export const createJcrPackage = async (
   await zip.generateAsync({ type: outputType })
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
-  await sanitizeAndSaveImageMappings(imageMappings, outputDirectory);
+  await sanitizeAndSaveAssetMappings(assetMappings, outputDirectory);
 };

@@ -10,9 +10,9 @@
  * governing permissions and limitations under the License.
  */
 import { createJcrPackage } from './package/packaging.js';
-import { getImageUrlsFromMarkdown } from './package/image-mapping.js';
+import { getAssetUrlsFromMarkdown } from './package/asset-mapping.js';
 
 export {
   createJcrPackage,
-  getImageUrlsFromMarkdown,
+  getAssetUrlsFromMarkdown,
 };
