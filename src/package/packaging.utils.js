@@ -146,21 +146,21 @@ export const getJcrPagePath = (path, siteFolderName) => {
  * that follows a lowercase, so reference paths should also use lower case.
  * @param {URL} assetUrl - The URL of the asset
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
- * @returns {string|null} the JCR path for the asset, null if no extension is present.
+ * @returns {string} the JCR path for the asset.
  */
 export const getJcrAssetPath = (assetUrl, assetFolderName) => {
   let path = assetUrl.pathname;
   let jcrAssetPath;
   // Extract file extension (only the last part)
   const lastDotIndex = path.lastIndexOf('.');
+  let extension = '';
 
-  if (lastDotIndex === -1 || lastDotIndex < path.lastIndexOf('/')) {
-    return ''; // No valid extension
+  // if there is a valid extension, remove it from the path
+  if (lastDotIndex !== -1 && lastDotIndex > path.lastIndexOf('/')) {
+    extension = path.substring(lastDotIndex);
+    // Remove only the last extension from path
+    path = path.substring(0, lastDotIndex);
   }
-
-  const extension = path.substring(lastDotIndex);
-  // Remove only the last extension from path
-  path = path.substring(0, lastDotIndex);
 
   if (path.startsWith('/content/dam/')) {
     const tokens = path.split('/');
@@ -192,7 +192,7 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
  * @param {string} assetReference the asset reference
  * @param {string} pageUrl the URL of the page
  * @param {string} assetFolderName the name of the asset folder(s) in AEM
- * @returns {string|null} the JCR path for the file reference
+ * @returns {string} the JCR path for the file reference
  */
 const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
   const host = new URL(pageUrl).origin;
@@ -279,10 +279,6 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       keys.forEach((key) => {
         if (attrValue.includes(key)) {
           const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
-          // if no jcr adjusted path is returned, skip replacing the reference - let user handle it
-          if (!jcrAssetPath) {
-            return;
-          }
           // update the map with the new jcr path
           updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
           // update the attribute value with the new jcr path
