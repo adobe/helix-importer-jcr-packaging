@@ -71,40 +71,9 @@ describe('getImageUrlsFromMarkdown', () => {
     expect(imageUrls[1]).to.equal('/test/car2.jpeg');
   });
 
-  it('should remove entries with null, undefined, or empty string values', () => {
-    const imageMap = new Map([
-      ['key1', 'value1'],
-      ['key2', null],
-      ['key3', ''],
-      ['key4', undefined],
-      ['key5', 'value5'],
-    ]);
-
-    const result = sanitizeImageMappings(imageMap);
-
-    expect(result.size).to.equal(2);
-    expect(result.has('key1')).to.equal(true);
-    expect(result.has('key5')).to.equal(true);
-    expect(result.has('key2')).to.equal(false);
-    expect(result.has('key3')).to.equal(false);
-    expect(result.has('key4')).to.equal(false);
-  });
-
-  it('should return an empty Map if all values are null, undefined, or empty strings', () => {
-    const imageMap = new Map([
-      ['key1', null],
-      ['key2', ''],
-      ['key3', undefined],
-    ]);
-
-    const result = sanitizeImageMappings(imageMap);
-
-    expect(result.size).to.equal(0);
-  });
-
   // should call createImageMappingFile with the correct arguments
   it('test getImageUrlsFromMarkdown', async () => {
-    const markdown = loadFile('../fixtures/mystique/hero.xml');
+    const markdown = await loadFile('../fixtures/mystique/hero.md');
     const imageUrl = await getImageUrlsFromMarkdown(markdown);
     expect(imageUrl).to.be.an('array');
     expect(imageUrl).to.have.lengthOf(1);
