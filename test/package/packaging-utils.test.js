@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 import he from 'he';
 import {
-  getFilterXml, getJcrPagePath, getPackageName, getParsedXml,
+  getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
   getPropertiesXml, traverseAndUpdateAssetReferences,
 } from '../../src/package/packaging.utils.js';
 
@@ -53,6 +53,38 @@ describe('packaging-utils', () => {
     pages = [{ path: '/content/site/a' }, { path: '/content/site/b' }];
     packageName = getPackageName(pages, 'xwalk');
     expect(packageName).to.equal('xwalk');
+  });
+
+  // write a test to cover getJcrAssetPath:
+  // 1. test lowercased asset referernces
+  // 2. should not add an extra .jpg to the URL
+  it('test the getJcrAssetPath', () => {
+    let assetFolderName = 'DOE-Sample-Site-1';
+
+    // ensure generated path is in lower case, and has no double extension
+    let assetUrl = new URL('https://xyz/content/dam/doe/sws/image/IMG-20241017-WA0000.jpg.thumb.1280.1280.jpg');
+    let expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/image/img-20241017-wa0000.jpg.thumb.1280.1280.jpg';
+    let actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
+
+    // ensure hidden file handling
+    assetUrl = new URL('https://example.com/doe/sws/.hiddenfile');
+    expectedJcrPath = '/content/dam/doe-sample-site-1/doe/sws/.hiddenfile';
+    actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
+
+    // should generate a path if resource url has extension
+    assetUrl = new URL('https://example.com/blob/shdckh234y4');
+    expectedJcrPath = '/content/dam/doe-sample-site-1/blob/shdckh234y4';
+    actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
+
+    // ensure removal of assetFolderName if present, before reinserting to avoid duplication
+    assetUrl = new URL('https://example.com/content/dam/doe/sws/toys/foo/card/toy.png');
+    assetFolderName = 'doe/sws/toys/foo';
+    expectedJcrPath = '/content/dam/doe/sws/toys/foo/card/toy.png';
+    actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
+    expect(actualJcrPath).to.equal(expectedJcrPath);
   });
 
   // write a test to cover getJcrPagePath
@@ -111,8 +143,8 @@ describe('packaging-utils', () => {
 
     // for each block test to see if the attribute has been updated
     expect(blocks[0].getAttribute('hero_image')).to.equal('/content/dam/xwalk/media1_a.jpeg');
-    expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderXYZ/c.png');
-    expect(blocks1[0].getElementsByTagName('item_1')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderXYZ/folder/d.png');
+    expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
+    expect(blocks1[0].getElementsByTagName('item_1')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/folder/d.png');
     expect(image[0].getAttribute('fileReference')).to.equal('/content/dam/xwalk/folder/e.png');
 
     // test to see if the text has been updated

@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 /* eslint-env mocha */
+import { readFile } from 'fs/promises';
 import { expect } from 'chai';
-import { getImageUrlsFromMarkdown } from '../../src/index.js';
+import { getImageUrlsFromMarkdown } from '../../src/package/image-mapping.js';
+
+const loadFile = async (file) => readFile(new URL(file, import.meta.url), 'utf-8');
 
 describe('getImageUrlsFromMarkdown', () => {
   it('should return an array of image urls (reference urls)', () => {
@@ -66,5 +69,13 @@ describe('getImageUrlsFromMarkdown', () => {
     expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('/car.jpeg');
     expect(imageUrls[1]).to.equal('/test/car2.jpeg');
+  });
+
+  // should call createImageMappingFile with the correct arguments
+  it('test getImageUrlsFromMarkdown', async () => {
+    const markdown = await loadFile('../fixtures/mystique/hero.md');
+    const imageUrl = await getImageUrlsFromMarkdown(markdown);
+    expect(imageUrl).to.be.an('array');
+    expect(imageUrl).to.have.lengthOf(1);
   });
 });
