@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.1.2...v2.0.0) (2025-02-26)
+
+
+* feat(sites-29416)!: Add support for importing non-image assets ([#7](https://github.com/adobe/helix-importer-jcr-packaging/issues/7)) ([ef4b444](https://github.com/adobe/helix-importer-jcr-packaging/commit/ef4b444785280eeaf5bab42af3a41109e60bcf25))
+
+
+### BREAKING CHANGES
+
+* The API getImageUrlsFromMarkdown has been renamed to getAssetUrlsFromMarkdown, to align more accurately to what it is doing.
+
+Co-authored-by: Ben Helleman <bhellema@adobe.com>
+
 ## [1.1.2](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.1.1...v1.1.2) (2025-02-26)
 
 
