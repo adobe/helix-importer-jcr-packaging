@@ -18,8 +18,8 @@ const imageRegex = /!\[([^\]]*)]\(([^) "]+)(?: *"([^"]*)")?\)|!\[([^\]]*)]\[([^\
 // Regex for reference definitions
 const referenceRegex = /\[([^\]]+)]:\s*(\S+)/g;
 
-// Regex for non-image asset links (PDFs, videos, docs, etc.)
-const nonImageAssetRegex = /(?:\[(.*?)\]|\[.*?\])\(([^)]+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv|mp4|mov|avi|wmv|mkv|flv|webm))\)|\[(.*?)\]:\s*(\S+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv|mp4|mov|avi|wmv|mkv|flv|webm))/gi;
+// Regex for non-image asset links (PDFs, docs, excel etc.)
+const nonImageAssetRegex = /(?:\[(.*?)\]|\[.*?\])\(([^)]+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv))\)|\[(.*?)\]:\s*(\S+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv))/gi;
 
 /**
  * Function to find reference definitions in a markdown file.
