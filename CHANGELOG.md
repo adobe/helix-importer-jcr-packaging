@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.1.1...v1.1.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* SITES-29316 Asset reference paths should be lowercased ([#5](https://github.com/adobe/helix-importer-jcr-packaging/issues/5)) ([5d7efba](https://github.com/adobe/helix-importer-jcr-packaging/commit/5d7efbae6a063a81e55649b6eec940e3f42471ba))
+
 ## [1.1.1](https://github.com/adobe/helix-importer-jcr-packaging/compare/v1.1.0...v1.1.1) (2025-02-12)
 
 
