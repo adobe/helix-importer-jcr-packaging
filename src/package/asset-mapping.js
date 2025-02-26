@@ -18,6 +18,9 @@ const imageRegex = /!\[([^\]]*)]\(([^) "]+)(?: *"([^"]*)")?\)|!\[([^\]]*)]\[([^\
 // Regex for reference definitions
 const referenceRegex = /\[([^\]]+)]:\s*(\S+)/g;
 
+// Regex for non-image asset links (PDFs, docs, excel etc.)
+const nonImageAssetRegex = /(?:\[(.*?)\]|\[.*?\])\(([^)]+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv))\)|\[(.*?)\]:\s*(\S+\.(?:pdf|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp|rtf|txt|csv))/gi;
+
 /**
  * Function to find reference definitions in a markdown file.
  *
@@ -36,21 +39,21 @@ const findReferenceDefinitionsInMarkdown = (markdownContent) => {
 };
 
 /**
- * Function to scan for images in a markdown file.
+ * Function to scan for assets in a markdown file.
  *
  * @param markdownContent - The content of the markdown file
- * @returns {Array<string>} A Map of image urls as key
+ * @returns {Array<string>} A Map of asset urls as key
  */
-const findImagesInMarkdown = (markdownContent) => {
+const findAssetsInMarkdown = (markdownContent) => {
   const references = findReferenceDefinitionsInMarkdown(markdownContent);
 
-  const imageUrls = [];
+  const assetUrls = [];
 
   // Identify each image url in the markdown content
   let match;
+  let url;
   // eslint-disable-next-line no-cond-assign
   while ((match = imageRegex.exec(markdownContent)) !== null) {
-    let url;
     if (match[2]) { // Inline image
       // eslint-disable-next-line prefer-destructuring
       url = match[2];
@@ -58,29 +61,38 @@ const findImagesInMarkdown = (markdownContent) => {
       url = references[match[5]] || null; // Resolve URL from reference map
     }
     if (url) {
-      imageUrls.push(url);
+      assetUrls.push(url);
     }
   }
 
-  return imageUrls;
+  // Find and add only non-image asset links
+  // eslint-disable-next-line no-cond-assign
+  while ((match = nonImageAssetRegex.exec(markdownContent)) !== null) {
+    url = match[2] || match[3];
+    if (url) {
+      assetUrls.push(url);
+    }
+  }
+
+  return assetUrls;
 };
 
 /**
- * Get the list image urls present in the markdown.
+ * Get the list asset urls present in the markdown.
  * @param {string} markdownContent - The content of the markdown file
- * @returns {Array<string>} An array of image urls.
+ * @returns {Array<string>} An array of asset urls.
  */
-const getImageUrlsFromMarkdown = (markdownContent) => {
+const getAssetUrlsFromMarkdown = (markdownContent) => {
   try {
-    return findImagesInMarkdown(markdownContent);
+    return findAssetsInMarkdown(markdownContent);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.warn('Error getting image urls from markdown:', error);
+    console.warn('Error getting asset urls from markdown:', error);
     return [];
   }
 };
 
 export {
   // eslint-disable-next-line import/prefer-default-export
-  getImageUrlsFromMarkdown,
+  getAssetUrlsFromMarkdown,
 };

@@ -241,7 +241,7 @@ export function getFullAssetUrl(assetReference, pageUrl) {
 
   // If the asset reference starts with './', it is a relative file path
   if (assetReference.startsWith('./')) {
-    return new URL(assetReference, pageUrlObj.href).pathname;
+    return new URL(assetReference, pageUrlObj.href).href;
   }
 
   // Absolute asset reference, appending the asset path to the host
