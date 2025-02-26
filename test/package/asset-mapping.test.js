@@ -49,12 +49,13 @@ describe('getAssetUrlsFromMarkdown', () => {
   });
 
   it('should return an non-image asset (pdf) url', () => {
-    const markdownContent = `Click [here](/content/dam/doe/foo/bar.pdf) to download the handy guide.
+    const markdownContent = `Click [here](/content/dam/doe/foo/bar.pdf) to download the handy guide. See [howto](./siteFoo.mp4).
     Also check [here](https://example.live/siteFoo.html).`;
 
     const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
-    expect(imageUrls).to.have.lengthOf(1);
+    expect(imageUrls).to.have.lengthOf(2);
     expect(imageUrls[0]).to.equal('/content/dam/doe/foo/bar.pdf');
+    expect(imageUrls[1]).to.equal('./siteFoo.mp4');
   });
 
   it('should return an array with no image urls', () => {
