@@ -48,13 +48,44 @@ describe('getAssetUrlsFromMarkdown', () => {
     expect(imageUrls[1]).to.equal('https://aem.live/car2.jpeg');
   });
 
-  it('should return an non-image asset (pdf) url', () => {
-    const markdownContent = `Click [here](/content/dam/doe/foo/bar.pdf) to download the handy guide.
-    Also check [here](https://example.live/siteFoo.html).`;
+  it('should return non-image asset URLs for various document types', () => {
+    const markdownContent = `
+      Click [PDF](/content/dam/doe/foo/bar.pdf) to download the guide.
+      View [DOC](/content/dam/doe/docs/sample.doc).
+      Open [DOCX](/content/dam/doe/docs/sample.docx).
+      See [XLS](/content/dam/doe/spreadsheets/data.xls).
+      Try [XLSX](/content/dam/doe/spreadsheets/data.xlsx).
+      Read [PPT](/content/dam/doe/presentations/slide.ppt).
+      Check [PPTX](/content/dam/doe/presentations/slide.pptx).
+      Open [ODT](/content/dam/doe/texts/note.odt).
+      Review [ODS](/content/dam/doe/spreadsheets/sheet.ods).
+      Access [ODP](/content/dam/doe/presentations/deck.odp).
+      Check [RTF](/content/dam/doe/docs/document.rtf).
+      Read [TXT](/content/dam/doe/texts/readme.txt).
+      Get [CSV](/content/dam/doe/data/records.csv).
+      Invalid [Fake](/content/dam/doe/fake/myimage.pdf.png).
+      Also check [here](https://example.live/siteFoo.html).
+    `;
 
-    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
-    expect(imageUrls).to.have.lengthOf(1);
-    expect(imageUrls[0]).to.equal('/content/dam/doe/foo/bar.pdf');
+    const assetUrls = getAssetUrlsFromMarkdown(markdownContent);
+
+    expect(assetUrls).to.have.lengthOf(13); // 13 valid document URLs
+    expect(assetUrls).to.include('/content/dam/doe/foo/bar.pdf');
+    expect(assetUrls).to.include('/content/dam/doe/docs/sample.doc');
+    expect(assetUrls).to.include('/content/dam/doe/docs/sample.docx');
+    expect(assetUrls).to.include('/content/dam/doe/spreadsheets/data.xls');
+    expect(assetUrls).to.include('/content/dam/doe/spreadsheets/data.xlsx');
+    expect(assetUrls).to.include('/content/dam/doe/presentations/slide.ppt');
+    expect(assetUrls).to.include('/content/dam/doe/presentations/slide.pptx');
+    expect(assetUrls).to.include('/content/dam/doe/texts/note.odt');
+    expect(assetUrls).to.include('/content/dam/doe/spreadsheets/sheet.ods');
+    expect(assetUrls).to.include('/content/dam/doe/presentations/deck.odp');
+    expect(assetUrls).to.include('/content/dam/doe/docs/document.rtf');
+    expect(assetUrls).to.include('/content/dam/doe/texts/readme.txt');
+    expect(assetUrls).to.include('/content/dam/doe/data/records.csv');
+
+    // Ensure the invalid case is excluded
+    expect(assetUrls).to.not.include('/content/dam/doe/fake/myimage.pdf.png');
   });
 
   it('should return an array with no image urls', () => {
