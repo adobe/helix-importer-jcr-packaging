@@ -73,9 +73,9 @@ describe('packaging-utils', () => {
     actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
     expect(actualJcrPath).to.equal(expectedJcrPath);
 
-    // shouldn't generate a path if resource url has extension
+    // should generate a path if resource url has extension
     assetUrl = new URL('https://example.com/blob/shdckh234y4');
-    expectedJcrPath = '';
+    expectedJcrPath = '/content/dam/doe-sample-site-1/blob/shdckh234y4';
     actualJcrPath = getJcrAssetPath(assetUrl, assetFolderName);
     expect(actualJcrPath).to.equal(expectedJcrPath);
 

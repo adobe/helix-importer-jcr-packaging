@@ -124,7 +124,7 @@ export const getPackageName = (pages, siteFolderName) => {
  * Get the JCR page path based on the site folder name and the path.
  * @param {string} path the path of the page
  * @param {string} siteFolderName the name of the site folder(s) in AEM
- * @returns the JCR page path
+ * @returns {string} the JCR page path
  */
 export const getJcrPagePath = (path, siteFolderName) => {
   if (path.startsWith('/content/')) {
@@ -146,21 +146,21 @@ export const getJcrPagePath = (path, siteFolderName) => {
  * that follows a lowercase, so reference paths should also use lower case.
  * @param {URL} assetUrl - The URL of the asset
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
- * @returns the JCR path for the asset
+ * @returns {string} the JCR path for the asset.
  */
 export const getJcrAssetPath = (assetUrl, assetFolderName) => {
   let path = assetUrl.pathname;
   let jcrAssetPath;
   // Extract file extension (only the last part)
   const lastDotIndex = path.lastIndexOf('.');
+  let extension = '';
 
-  if (lastDotIndex === -1 || lastDotIndex < path.lastIndexOf('/')) {
-    return ''; // No valid extension
+  // if there is a valid extension, remove it from the path
+  if (lastDotIndex !== -1 && lastDotIndex > path.lastIndexOf('/')) {
+    extension = path.substring(lastDotIndex);
+    // Remove only the last extension from path
+    path = path.substring(0, lastDotIndex);
   }
-
-  const extension = path.substring(lastDotIndex);
-  // Remove only the last extension from path
-  path = path.substring(0, lastDotIndex);
 
   if (path.startsWith('/content/dam/')) {
     const tokens = path.split('/');
@@ -180,10 +180,9 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
 
     jcrAssetPath = `${tokens.join('/')}${extension}`;
   } else {
-    const suffix = '';
     // replace media_ with media1_ in path to avoid conflicts with the media folder
     path = path.replace('/media_', '/media1_');
-    jcrAssetPath = `/content/dam/${assetFolderName}${path}${suffix}${extension}`.toLowerCase();
+    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`.toLowerCase();
   }
   return jcrAssetPath.toLowerCase();
 };
@@ -193,7 +192,7 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
  * @param {string} assetReference the asset reference
  * @param {string} pageUrl the URL of the page
  * @param {string} assetFolderName the name of the asset folder(s) in AEM
- * @returns the JCR path for the file reference
+ * @returns {string} the JCR path for the file reference
  */
 const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
   const host = new URL(pageUrl).origin;
@@ -273,7 +272,7 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
   if (node.nodeType === 1) { // Element node
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
-      // Unescape HTML entities (needs double decoding as image urls are double encoded in the xml)
+      // Unescape HTML entities (needs double decoding as asset urls are double encoded in the xml)
       // console.log(`Checking attribute: ${attr.name}`);
       let attrValue = he.decode(he.decode(node.getAttribute(attr.name)));
       const keys = [...jcrAssetMap.keys()];

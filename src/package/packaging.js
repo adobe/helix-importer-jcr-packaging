@@ -22,7 +22,6 @@ import {
   traverseAndUpdateAssetReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
-import { sanitizeAssetMappings } from './asset-mapping.js';
 
 let jcrPages = [];
 const ASSET_MAPPING_FILE = 'asset-mappings.json';
@@ -38,10 +37,10 @@ const addPage = async (page, dir, prefix, zip) => {
 
 /**
  * Updates the asset references in given xml, to point to their respective JCR paths
- * @param xml - The xml content of the page
- * @param pageUrl - The url of the site page
- * @param assetFolderName - The name of the asset folder(s) in AEM
- * @param assetMappings - A map to store the asset urls and their corresponding jcr paths
+ * @param {string} xml - The xml content of the page
+ * @param {string} pageUrl - The url of the site page
+ * @param {string} assetFolderName - The name of the asset folder(s) in AEM
+ * @param {Map} assetMappings - A map to store the asset urls and their corresponding jcr paths
  * @returns {Promise<*|string>} - The updated xml content
  */
 export const updateAssetReferences = async (xml, pageUrl, assetFolderName, assetMappings) => {
@@ -125,14 +124,11 @@ const getEmptyAncestorPages = (pages) => {
  * @param {*} assetMappings - The asset mappings
  * @param {*} outputDirectory - The directory handle
  */
-const sanitizeAndSaveAssetMappings = async (assetMappings, outputDirectory) => {
-  // Sanitize the asset mappings
-  const sanitizedMappings = sanitizeAssetMappings(assetMappings);
-
+const saveAssetMappings = async (assetMappings, outputDirectory) => {
   // Convert Map to a plain object
-  const obj = Object.fromEntries(sanitizedMappings);
+  const obj = Object.fromEntries(assetMappings);
 
-  // Save the updated asset mapping content into a file
+  // Save the updated image mapping content into a file
   await saveFile(outputDirectory, ASSET_MAPPING_FILE, JSON.stringify(obj, null, 2));
 };
 
@@ -192,5 +188,5 @@ export const createJcrPackage = async (
   await zip.generateAsync({ type: outputType })
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
-  await sanitizeAndSaveAssetMappings(assetMappings, outputDirectory);
+  await saveAssetMappings(assetMappings, outputDirectory);
 };
