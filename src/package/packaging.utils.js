@@ -121,22 +121,59 @@ export const getPackageName = (pages, siteFolderName) => {
 };
 
 /**
+ * Adjusts an JCR path by replacing invalid characters
+ * in folder and file names with an underscore (`-`).
+ *
+ * Folder names cannot contain: *, /, :, [, \, ], |, #, %, {, }, ?, ", ., ^, ;, +, &, (space), (tab)
+ * File names cannot contain: *, /, :, [, \, ], |, #, %, {, }, ?, &
+ *
+ * @param {string} jcrPath - The original JCR path.
+ * @returns {string} - The adjusted JCR path with invalid characters replaced by `-`.
+ *
+ * @example
+ * Input: '/content/dam/dow/so+/image_1?.jpg'
+ * Output: '/content/dam/dow/so-/image-1-.jpg'
+ */
+export const getInvalidCharAdjustedPath = (jcrPath) => {
+  const folderInvalidChars = new Set(['*', '/', ':', '[', '\\', ']', '|', '#', '%', '{', '}', '?', '"', '.', '^', ';', '+', '&', ' ', '\t']);
+  const fileInvalidChars = new Set(['*', '/', ':', '[', '\\', ']', '|', '#', '%', '{', '}', '?', '&']);
+  const replacementChar = '-';
+
+  const tokens = jcrPath.split('/');
+
+  for (let i = 0; i < tokens.length; i += 1) {
+    if (i === tokens.length - 1) {
+      // Last token (file name) should use fileInvalidChars
+      tokens[i] = tokens[i].split('').map((char) => (fileInvalidChars.has(char) ? replacementChar : char)).join('');
+    } else {
+      // Folder names should use folderInvalidChars
+      tokens[i] = tokens[i].split('').map((char) => (folderInvalidChars.has(char) ? replacementChar : char)).join('');
+    }
+  }
+
+  return tokens.join('/');
+};
+
+/**
  * Get the JCR page path based on the site folder name and the path.
  * @param {string} path the path of the page
  * @param {string} siteFolderName the name of the site folder(s) in AEM
  * @returns {string} the JCR page path
  */
 export const getJcrPagePath = (path, siteFolderName) => {
+  let jcrPagePath;
   if (path.startsWith('/content/')) {
     // replace the 2nd token with the site folder name
     const tokens = path.split('/');
     tokens.splice(2, 1, siteFolderName);
-    return tokens.join('/');
+    jcrPagePath = tokens.join('/');
+  } else {
+    // Remove any leading "/" from the path
+    // eslint-disable-next-line no-param-reassign
+    path = path.replace(/^\/+/, '');
+    jcrPagePath = `/content/${siteFolderName}/${path}`;
   }
-  // Remove any leading "/" from the path
-  // eslint-disable-next-line no-param-reassign
-  path = path.replace(/^\/+/, '');
-  return `/content/${siteFolderName}/${path}`;
+  return getInvalidCharAdjustedPath(jcrPagePath);
 };
 
 /**
@@ -182,9 +219,9 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
   } else {
     // replace media_ with media1_ in path to avoid conflicts with the media folder
     path = path.replace('/media_', '/media1_');
-    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`.toLowerCase();
+    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`;
   }
-  return jcrAssetPath.toLowerCase();
+  return getInvalidCharAdjustedPath(jcrAssetPath).toLowerCase();
 };
 
 /**
