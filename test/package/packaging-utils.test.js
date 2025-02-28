@@ -14,7 +14,7 @@ import { expect } from 'chai';
 import he from 'he';
 import {
   getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
-  getPropertiesXml, traverseAndUpdateAssetReferences,
+  getPropertiesXml, traverseAndUpdateAssetReferences, getInvalidCharAdjustedPath,
 } from '../../src/package/packaging.utils.js';
 
 describe('packaging-utils', () => {
@@ -151,5 +151,43 @@ describe('packaging-utils', () => {
     expect(text[0].getAttribute('text')).to.equal(
       he.encode('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>'),
     );
+  });
+
+  it('test for getInvalidCharAdjustedAssetPath', () => {
+    // should replace invalid folder name characters
+    let input = '/content/dam/inva*lid/fol:der/image.jpg';
+    let expected = '/content/dam/inva-lid/fol-der/image.jpg';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(expected);
+
+    // should replace invalid file name characters
+    input = '/content/dam/folder/image?.jpg';
+    expected = '/content/dam/folder/image-.jpg';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(expected);
+
+    // should not modify valid paths
+    input = '/content/dam/valid-folder/valid-image.jpg';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(input);
+
+    // 'should handle spaces and tabs in folder names
+    input = '/content/dam/folder name/another\tfolder/image.jpg';
+    expected = '/content/dam/folder-name/another-folder/image.jpg';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(expected);
+
+    // should correctly handle multiple invalid characters
+    input = '/content/dam/inv*ali[d]/fol^der+/ima?ge.jpg';
+    expected = '/content/dam/inv-ali-d-/fol-der-/ima-ge.jpg';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(expected);
+
+    // should replace invalid characters at the start or end of a folder name
+    input = '/content/dam/*invalid*/folder/';
+    expected = '/content/dam/-invalid-/folder/';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(expected);
+
+    // should handle empty input gracefully
+    expect(getInvalidCharAdjustedPath('')).to.equal('');
+
+    // should not break if given a path without a file
+    input = '/content/dam/folder/';
+    expect(getInvalidCharAdjustedPath(input)).to.equal(input);
   });
 });
