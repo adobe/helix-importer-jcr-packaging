@@ -24,7 +24,7 @@ import {
 import { saveFile } from '../shared/filesystem.js';
 
 let jcrPages = [];
-const ASSET_MAPPING_FILE = 'asset-mappings.json';
+const ASSET_MAPPING_FILE = 'asset-mapping.json';
 
 const init = () => {
   jcrPages = [];
