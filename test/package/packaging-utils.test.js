@@ -98,7 +98,7 @@ describe('packaging-utils', () => {
     expect(jcrPath2).to.equal('/content/adobe/products/lightroom');
 
     // if the path starts with /content then the jcr path should be the same
-    const jcrPath3 = getJcrPagePath('/content/foo/bar/xyz', 'foo-bar');
+    const jcrPath3 = getJcrPagePath('/content/foo/bar/xyz', 'foo');
     expect(jcrPath3).to.equal('/content/foo/bar/xyz');
   });
 
