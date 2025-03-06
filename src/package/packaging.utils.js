@@ -121,37 +121,30 @@ export const getPackageName = (pages, siteFolderName) => {
 };
 
 /**
- * Adjusts an JCR path by replacing invalid characters
- * in folder and file names with an underscore (`-`).
+ * Sanitizes a JCR (Java Content Repository) path by replacing invalid characters with hyphens.
+ * Applies different sanitization rules for folders versus files:
+ * - Folders: Replaces spaces, tabs, and special characters (* / : [ \ ] | # % { } ? " ^ ; + &)
+ * with hyphens
+ * - Files: Replaces special characters (* / : [ \ ] | # % { } ? &) with hyphens
  *
- * Folder names cannot contain: *, /, :, [, \, ], |, #, %, {, }, ?, ", ., ^, ;, +, &, (space), (tab)
- * File names cannot contain: *, /, :, [, \, ], |, #, %, {, }, ?, &
- *
- * @param {string} jcrPath - The original JCR path.
- * @returns {string} - The adjusted JCR path with invalid characters replaced by `-`.
- *
+ * @param {string} jcrPath - The JCR path to sanitize
+ * @returns {string} The sanitized path with invalid characters replaced by hyphens
  * @example
- * Input: '/content/dam/dow/so+/image_1?.jpg'
- * Output: '/content/dam/dow/so-/image-1-.jpg'
+ * fixPath('/content/my folder/file*name.txt')
+ * // Returns: '/content/my-folder/file-name.txt'
  */
-export const getInvalidCharAdjustedPath = (jcrPath) => {
-  const folderInvalidChars = new Set(['*', '/', ':', '[', '\\', ']', '|', '#', '%', '{', '}', '?', '"', '.', '^', ';', '+', '&', ' ', '\t']);
-  const fileInvalidChars = new Set(['*', '/', ':', '[', '\\', ']', '|', '#', '%', '{', '}', '?', '&']);
+export const getSanitizedJcrPath = (jcrPath) => {
+  const folderRegex = /[\s\t*/:[\]|#%{}?"^;+&]/g;
+  const fileRegex = /[*/:[\]|#%{}?&]/g;
   const replacementChar = '-';
 
-  const tokens = jcrPath.split('/');
+  const parts = jcrPath.split('/');
+  const fileName = parts.pop();
 
-  for (let i = 0; i < tokens.length; i += 1) {
-    if (i === tokens.length - 1) {
-      // Last token (file name) should use fileInvalidChars
-      tokens[i] = tokens[i].split('').map((char) => (fileInvalidChars.has(char) ? replacementChar : char)).join('');
-    } else {
-      // Folder names should use folderInvalidChars
-      tokens[i] = tokens[i].split('').map((char) => (folderInvalidChars.has(char) ? replacementChar : char)).join('');
-    }
-  }
-
-  return tokens.join('/');
+  return [
+    ...parts.map((folder) => folder.replace(folderRegex, replacementChar)),
+    fileName.replace(fileRegex, replacementChar),
+  ].join('/');
 };
 
 /**
@@ -173,7 +166,7 @@ export const getJcrPagePath = (path, siteFolderName) => {
     path = path.replace(/^\/+/, '');
     jcrPagePath = `/content/${siteFolderName}/${path}`;
   }
-  return getInvalidCharAdjustedPath(jcrPagePath);
+  return getSanitizedJcrPath(jcrPagePath);
 };
 
 /**
@@ -221,7 +214,7 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
     path = path.replace('/media_', '/media1_');
     jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`;
   }
-  return getInvalidCharAdjustedPath(jcrAssetPath).toLowerCase();
+  return getSanitizedJcrPath(jcrAssetPath).toLowerCase();
 };
 
 /**
