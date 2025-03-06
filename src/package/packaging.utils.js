@@ -121,22 +121,52 @@ export const getPackageName = (pages, siteFolderName) => {
 };
 
 /**
+ * Sanitizes a JCR (Java Content Repository) path by replacing invalid characters with hyphens.
+ * Applies different sanitization rules for folders versus files:
+ * - Folders: Replaces spaces, tabs, and special characters (* / : [ \ ] | # % { } ? " ^ ; + &)
+ * with hyphens
+ * - Files: Replaces special characters (* / : [ \ ] | # % { } ? &) with hyphens
+ *
+ * @param {string} jcrPath - The JCR path to sanitize
+ * @returns {string} The sanitized path with invalid characters replaced by hyphens
+ * @example
+ * fixPath('/content/my folder/file*name.txt')
+ * // Returns: '/content/my-folder/file-name.txt'
+ */
+export const getSanitizedJcrPath = (jcrPath) => {
+  const folderRegex = /[\s\t*/:[\]|#%{}?"^;+&]/g;
+  const fileRegex = /[*/:[\]|#%{}?&]/g;
+  const replacementChar = '-';
+
+  const parts = jcrPath.split('/');
+  const fileName = parts.pop();
+
+  return [
+    ...parts.map((folder) => folder.replace(folderRegex, replacementChar)),
+    fileName.replace(fileRegex, replacementChar),
+  ].join('/');
+};
+
+/**
  * Get the JCR page path based on the site folder name and the path.
  * @param {string} path the path of the page
  * @param {string} siteFolderName the name of the site folder(s) in AEM
  * @returns {string} the JCR page path
  */
 export const getJcrPagePath = (path, siteFolderName) => {
+  let jcrPagePath;
   if (path.startsWith('/content/')) {
     // replace the 2nd token with the site folder name
     const tokens = path.split('/');
     tokens.splice(2, 1, siteFolderName);
-    return tokens.join('/');
+    jcrPagePath = tokens.join('/');
+  } else {
+    // Remove any leading "/" from the path
+    // eslint-disable-next-line no-param-reassign
+    path = path.replace(/^\/+/, '');
+    jcrPagePath = `/content/${siteFolderName}/${path}`;
   }
-  // Remove any leading "/" from the path
-  // eslint-disable-next-line no-param-reassign
-  path = path.replace(/^\/+/, '');
-  return `/content/${siteFolderName}/${path}`;
+  return getSanitizedJcrPath(jcrPagePath);
 };
 
 /**
@@ -182,9 +212,9 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
   } else {
     // replace media_ with media1_ in path to avoid conflicts with the media folder
     path = path.replace('/media_', '/media1_');
-    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`.toLowerCase();
+    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`;
   }
-  return jcrAssetPath.toLowerCase();
+  return getSanitizedJcrPath(jcrAssetPath).toLowerCase();
 };
 
 /**

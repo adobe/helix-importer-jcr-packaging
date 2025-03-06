@@ -14,7 +14,7 @@ import { expect } from 'chai';
 import he from 'he';
 import {
   getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
-  getPropertiesXml, traverseAndUpdateAssetReferences,
+  getPropertiesXml, traverseAndUpdateAssetReferences, getSanitizedJcrPath,
 } from '../../src/package/packaging.utils.js';
 
 describe('packaging-utils', () => {
@@ -93,9 +93,13 @@ describe('packaging-utils', () => {
     const jcrPath = getJcrPagePath('/products/lightroom', 'adobe');
     expect(jcrPath).to.equal('/content/adobe/products/lightroom');
 
-    // if the path starts with /content/adobe then the jcr path should be the same
+    // if the path starts with /content then the jcr path should be the same
     const jcrPath2 = getJcrPagePath('/content/adobe/products/lightroom', 'adobe');
     expect(jcrPath2).to.equal('/content/adobe/products/lightroom');
+
+    // if the path starts with /content then the jcr path should be the same
+    const jcrPath3 = getJcrPagePath('/content/foo/bar/xyz', 'foo');
+    expect(jcrPath3).to.equal('/content/foo/bar/xyz');
   });
 
   // write unit test for traverseAndUpdateAssetReferences
@@ -151,5 +155,43 @@ describe('packaging-utils', () => {
     expect(text[0].getAttribute('text')).to.equal(
       he.encode('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>'),
     );
+  });
+
+  it('test for getSanitizedJcrPath', () => {
+    // should replace invalid folder name characters
+    let input = '/content/dam/inva*lid/fol:der/image.jpg';
+    let expected = '/content/dam/inva-lid/fol-der/image.jpg';
+    expect(getSanitizedJcrPath(input)).to.equal(expected);
+
+    // should replace invalid file name characters
+    input = '/content/dam/folder/image?.jpg';
+    expected = '/content/dam/folder/image-.jpg';
+    expect(getSanitizedJcrPath(input)).to.equal(expected);
+
+    // should not modify valid paths
+    input = '/content/dam/valid-folder/valid-image.jpg';
+    expect(getSanitizedJcrPath(input)).to.equal(input);
+
+    // 'should handle spaces and tabs in folder names
+    input = '/content/dam/folder name/another\tfolder/image.jpg';
+    expected = '/content/dam/folder-name/another-folder/image.jpg';
+    expect(getSanitizedJcrPath(input)).to.equal(expected);
+
+    // should correctly handle multiple invalid characters
+    input = '/content/dam/inv*ali[d]/fol^der+/ima?ge.jpg';
+    expected = '/content/dam/inv-ali-d-/fol-der-/ima-ge.jpg';
+    expect(getSanitizedJcrPath(input)).to.equal(expected);
+
+    // should replace invalid characters at the start or end of a folder name
+    input = '/content/dam/*invalid*/folder/';
+    expected = '/content/dam/-invalid-/folder/';
+    expect(getSanitizedJcrPath(input)).to.equal(expected);
+
+    // should handle empty input gracefully
+    expect(getSanitizedJcrPath('')).to.equal('');
+
+    // should not break if given a path without a file
+    input = '/content/dam/folder/';
+    expect(getSanitizedJcrPath(input)).to.equal(input);
   });
 });
