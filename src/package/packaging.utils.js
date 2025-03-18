@@ -292,34 +292,74 @@ function updateJcrAssetMap(jcrAssetMap, originalPath, updatedAssetPath, pageUrl)
 }
 
 /**
- * Traverse the DOM tree and update the asset references to point to the JCR paths.
- * @param {*} node - The node to traverse
+ * Update the asset reference to point to the JCR path.
+ * @param {string} attrValue - The attribute value
  * @param {string} pageUrl - The URL of the page
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
  * @param {Map} jcrAssetMap - A map of asset references to their corresponding JCR paths
  */
-export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName, jcrAssetMap) => {
+function getUpdatedAssetReferences(attrValue, pageUrl, assetFolderName, jcrAssetMap) {
+  let updatedAttrValue = attrValue;
+  const keys = [...jcrAssetMap.keys()];
+  keys.forEach((key) => {
+    if (updatedAttrValue.includes(key)) {
+      const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
+      // update the map with the new jcr path
+      updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
+      // update the attribute value with the new jcr path
+      updatedAttrValue = updatedAttrValue.replace(key, jcrAssetPath);
+    }
+  });
+  return updatedAttrValue;
+}
+
+/**
+ * Get the updated JCR page reference path for a given attribute.
+ * @param {string} pageReference - The page reference
+ * @param {string} siteFolderName - The name of the site folder(s) in AEM
+ */
+function getUpdatedPageReference(pageReference, siteFolderName) {
+  return he.encode(getJcrPagePath(pageReference, siteFolderName));
+}
+
+/**
+ * Traverse the DOM tree and update the references to point to the JCR paths.
+ * @param {*} node - The node to traverse
+ * @param {string} pageUrl - The URL of the page
+ * @param {string} assetFolderName - The name of the asset folder(s) in AEM
+ * @param {string} siteFolderName - The name of the site folder(s) in AEM
+ * @param {Map} jcrAssetMap - A map of asset references to their corresponding JCR paths
+ */
+export const traverseAndUpdateReferences = (
+  node,
+  pageUrl,
+  assetFolderName,
+  siteFolderName,
+  jcrAssetMap,
+) => {
   if (node.nodeType === 1) { // Element node
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
       // Unescape HTML entities (needs double decoding as asset urls are double encoded in the xml)
-      // console.log(`Checking attribute: ${attr.name}`);
       let attrValue = he.decode(he.decode(node.getAttribute(attr.name)));
-      const keys = [...jcrAssetMap.keys()];
-      keys.forEach((key) => {
-        if (attrValue.includes(key)) {
-          const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
-          // update the map with the new jcr path
-          updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
-          // update the attribute value with the new jcr path
-          attrValue = attrValue.replace(key, jcrAssetPath);
-          node.setAttribute(attr.name, he.encode(attrValue));
-        }
-      });
+      const attrName = attr.name;
+      // if the attribute is a link, update the page reference
+      if (attrName === 'link') {
+        attrValue = getUpdatedPageReference(attrValue, siteFolderName);
+      } else { // check if the attribute is an asset reference and update it
+        attrValue = getUpdatedAssetReferences(attrValue, pageUrl, assetFolderName, jcrAssetMap);
+      }
+      node.setAttribute(attrName, he.encode(attrValue));
     }
   }
   // Traverse child nodes
   for (let i = 0; i < node.childNodes.length; i += 1) {
-    traverseAndUpdateAssetReferences(node.childNodes[i], pageUrl, assetFolderName, jcrAssetMap);
+    traverseAndUpdateReferences(
+      node.childNodes[i],
+      pageUrl,
+      assetFolderName,
+      siteFolderName,
+      jcrAssetMap,
+    );
   }
 };
