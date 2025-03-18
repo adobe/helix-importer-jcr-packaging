@@ -19,7 +19,7 @@ import {
   getFilterXml,
   getPackageName,
   getJcrPagePath,
-  traverseAndUpdateAssetReferences,
+  traverseAndUpdateReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
 
@@ -36,14 +36,21 @@ const addPage = async (page, dir, prefix, zip) => {
 };
 
 /**
- * Updates the asset references in given xml, to point to their respective JCR paths
+ * Updates the references in given xml, to point to their respective JCR paths
  * @param {string} xml - The xml content of the page
  * @param {string} pageUrl - The url of the site page
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
+ * @param {string} siteFolderName - The name of the site folder(s) in AEM
  * @param {Map} assetMappings - A map to store the asset urls and their corresponding jcr paths
  * @returns {Promise<*|string>} - The updated xml content
  */
-export const updateAssetReferences = async (xml, pageUrl, assetFolderName, assetMappings) => {
+export const updateReferences = async (
+  xml,
+  pageUrl,
+  assetFolderName,
+  siteFolderName,
+  assetMappings,
+) => {
   let doc;
   try {
     doc = getParsedXml(xml);
@@ -53,8 +60,14 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderName, asset
     return xml;
   }
 
-  // Start traversal from the document root and update the asset references
-  traverseAndUpdateAssetReferences(doc.documentElement, pageUrl, assetFolderName, assetMappings);
+  // Start traversal from the document root and update the references
+  traverseAndUpdateReferences(
+    doc.documentElement,
+    pageUrl,
+    assetFolderName,
+    siteFolderName,
+    assetMappings,
+  );
 
   const serializer = new XMLSerializer();
   return serializer.serializeToString(doc);
@@ -66,10 +79,11 @@ export const getJcrPages = async (pages, siteFolderName, assetFolderName, assetM
   sourceXml: page.data,
   pageProperties: getPageProperties(page.data),
   pageContentChildren: getPageContentChildren(page.data),
-  processedXml: await updateAssetReferences(
+  processedXml: await updateReferences(
     page.data,
     page.url,
     assetFolderName,
+    siteFolderName,
     assetMappings,
   ),
   jcrPath: getJcrPagePath(page.path, siteFolderName),

@@ -12,7 +12,7 @@
 /* eslint-env mocha */
 import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
-import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
+import { createJcrPackage, updateReferences } from '../../src/package/packaging.js';
 import { getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
@@ -57,9 +57,10 @@ describe('packaging', () => {
     // Init image URL map (original urls only, jcr paths will be added by updateAssetReferences)
     const imageUrls = await getImageUrlKeysArray();
     const actualImageUrlMapping = new Map(imageUrls.map((url) => [url, '']));
-    const actualProcessedXml = await updateAssetReferences(
+    const actualProcessedXml = await updateReferences(
       originalXml,
       PAGE_URL,
+      ASSET_FOLDER_NAME,
       ASSET_FOLDER_NAME,
       actualImageUrlMapping,
     );
@@ -83,7 +84,13 @@ describe('packaging', () => {
     const imageUrls = await getImageUrlKeysArray();
     const actualImageUrlMapping = new Map(imageUrls.map((url) => [url, '']));
 
-    await updateAssetReferences(originalXml, PAGE_URL, ASSET_FOLDER_NAME, actualImageUrlMapping);
+    await updateReferences(
+      originalXml,
+      PAGE_URL,
+      ASSET_FOLDER_NAME,
+      ASSET_FOLDER_NAME,
+      actualImageUrlMapping,
+    );
 
     // Compare the two maps
     expect(
@@ -103,7 +110,7 @@ describe('packaging', () => {
   it('should handle XML parsing errors in updateAssetReferences', async () => {
     const invalidXml = '<invalid><xml>';
     const imageUrls = await getImageUrlKeysArray();
-    const result = await updateAssetReferences(
+    const result = await updateReferences(
       invalidXml,
       PAGE_URL,
       ASSET_FOLDER_NAME,

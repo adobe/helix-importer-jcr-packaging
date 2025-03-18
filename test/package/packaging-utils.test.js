@@ -14,7 +14,7 @@ import { expect } from 'chai';
 import he from 'he';
 import {
   getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
-  getPropertiesXml, traverseAndUpdateAssetReferences, getSanitizedJcrPath,
+  getPropertiesXml, traverseAndUpdateReferences, getSanitizedJcrPath,
 } from '../../src/package/packaging.utils.js';
 
 describe('packaging-utils', () => {
@@ -109,7 +109,7 @@ describe('packaging-utils', () => {
   <jcr:content>
     <root>
       <section>
-        <block hero_image="https://domain.com/media_a.jpeg"></block>
+        <block hero_image="https://domain.com/media_a.jpeg" link="/media/foo"></block>
         <text_1 text="&lt;p&gt;&lt;img src=&quot;/car.jpeg?width=750&amp;#x26;format=jpeg&amp;#x26;optimize=medium&quot;&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;/boat.jpeg?width=750&amp;#x26;format=jpeg&amp;#x26;optimize=medium&quot;&gt;&lt;/p&gt;"/>
         <block_1>
           <item_0 image="./c.png"></item_0>
@@ -133,9 +133,10 @@ describe('packaging-utils', () => {
       ['/content/dam/folder/e.png', '/content/dam/xwalk/folder/e.png'],
     ]);
 
-    traverseAndUpdateAssetReferences(
+    traverseAndUpdateReferences(
       document.documentElement,
       pageUrl,
+      assetFolderName,
       assetFolderName,
       jcrAssetMap,
     );
@@ -147,6 +148,7 @@ describe('packaging-utils', () => {
 
     // for each block test to see if the attribute has been updated
     expect(blocks[0].getAttribute('hero_image')).to.equal('/content/dam/xwalk/media1_a.jpeg');
+    expect(blocks[0].getAttribute('link')).to.equal('/content/xwalk/media/foo');
     expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
     expect(blocks1[0].getElementsByTagName('item_1')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/folder/d.png');
     expect(image[0].getAttribute('fileReference')).to.equal('/content/dam/xwalk/folder/e.png');
