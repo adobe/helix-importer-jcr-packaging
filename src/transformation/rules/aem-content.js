@@ -19,7 +19,16 @@ export default function transform(value, context) {
     return value;
   }
 
-  return value.startsWith('/')
-    ? `/content/${siteFolderName}${value}`
-    : `/content/${siteFolderName}/${value}`;
+  let path = value;
+
+  try {
+    const url = new URL(path);
+    path = url.pathname;
+  } catch (error) {
+    // if the value is not a URL, then we can ignore the error
+  }
+
+  return path.startsWith('/')
+    ? `/content/${siteFolderName}${path}`
+    : `/content/${siteFolderName}/${path}`;
 }

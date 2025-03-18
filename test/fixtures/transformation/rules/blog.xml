@@ -7,6 +7,7 @@
                 <block sling:resourceType="core/franklin/components/block/v1/block" jcr:primaryType="nt:unstructured" filter="blogs" name="Blogs">
                     <item_0 sling:resourceType="core/franklin/components/block/v1/block/item" name="Blog" model="blog-entry" modelFields="[title, path]" path="/blogs/page1" title="Page 1"></item_0>
                     <item_1 sling:resourceType="core/franklin/components/block/v1/block/item" name="Blog" model="blog-entry" modelFields="[title, path]" path="/blogs/page2" title="Page 2"></item_1>
+                    <item_1 sling:resourceType="core/franklin/components/block/v1/block/item" name="Blog" model="blog-entry" modelFields="[title, path]" path="https://www.domain.com/blogs/page3" title="Page 3"></item_1>
                 </block>
             </section>
         </root>

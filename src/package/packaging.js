@@ -11,7 +11,6 @@
  */
 import JSZip from 'jszip';
 import { XMLSerializer } from '@xmldom/xmldom';
-import path from 'path';
 import {
   getParsedXml,
   getPageProperties,
@@ -223,5 +222,5 @@ export const createJcrPackage = async (
 
   await saveAssetMappings(assetMappings, outputDirectory);
 
-  return path.resolve(outputDirectory, `${packageName}.zip`);
+  return `${outputDirectory}/${packageName}.zip`;
 };
