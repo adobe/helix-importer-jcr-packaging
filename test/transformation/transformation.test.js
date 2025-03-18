@@ -8,17 +8,24 @@ import transform from '../../src/transformation/transformation.js';
 describe('transformation rules', () => {
   let fixturePath;
   let xmlFixture;
-  let rulesFixture;
+  const rulesFixture = {
+    'blog-entry': {
+      path: 'aem-content',
+    },
+  };
+
+  const context = {
+    siteFolderName: 'xwalk',
+  };
 
   before(() => {
     fixturePath = join(process.cwd(), 'test', 'fixtures', 'transformation', 'rules');
     xmlFixture = readFileSync(join(fixturePath, 'blog.xml'), 'utf8');
-    rulesFixture = JSON.parse(readFileSync(join(fixturePath, 'transformation.rules.json'), 'utf8'));
   });
 
   describe('transform function with aem-content rule', () => {
     it('should apply aem-content transformation to specified fields', () => {
-      const result = transform(xmlFixture, rulesFixture);
+      const result = transform(xmlFixture, rulesFixture, context);
 
       // Verify the transformation was applied to the path field
       expect(result).to.include('path="/content/xwalk/blogs/page1"');
@@ -26,7 +33,7 @@ describe('transformation rules', () => {
     });
 
     it('should only transform fields specified in the rules', () => {
-      const result = transform(xmlFixture, rulesFixture);
+      const result = transform(xmlFixture, rulesFixture, context);
 
       // Verify non-specified fields remain unchanged
       expect(result).to.include('path="/content/xwalk/blogs/page1"');
@@ -44,7 +51,7 @@ describe('transformation rules', () => {
         },
       };
 
-      const result = transform(xmlFixture, extendedRules);
+      const result = transform(xmlFixture, extendedRules, context);
 
       // Verify both path and link are transformed
       expect(result).to.include('path="/content/xwalk/blogs/page1"');
@@ -54,7 +61,7 @@ describe('transformation rules', () => {
     });
 
     it('should preserve XML structure and non-transformed attributes', () => {
-      const result = transform(xmlFixture, rulesFixture);
+      const result = transform(xmlFixture, rulesFixture, context);
 
       // Verify the overall structure is preserved
       expect(result).to.include('<?xml version="1.0" encoding="UTF-8"?>');
@@ -79,7 +86,7 @@ describe('transformation rules', () => {
         },
       };
 
-      const result = transform(xmlFixture, invalidRules);
+      const result = transform(xmlFixture, invalidRules, context);
 
       // Verify the field remains unchanged when transformation type is unknown
       expect(result).to.include('path="/blogs/page1"');

@@ -37,6 +37,7 @@ describe('transformer loader', () => {
   });
 
   it('should handle multiple transformers', async () => {
+    const siteName = 'blogs';
     // Import and register the uppercase transformer
     const uppercaseTransformer = await import('../fixtures/transformation/rules/uppercase.js');
     registerTransformer('uppercase', uppercaseTransformer.default);
@@ -50,11 +51,13 @@ describe('transformer loader', () => {
     };
 
     // Transform the XML
-    const result = transform(xmlFixture, rules);
+    const result = transform(xmlFixture, rules, {
+      siteFolderName: siteName,
+    });
 
     // Verify both transformations were applied
     expect(result).to.include('title="PAGE 1"');
-    expect(result).to.include('path="/content/xwalk/blogs/page1"');
+    expect(result).to.include(`path="/content/${siteName}/blogs/page1"`);
   });
 
   it('should throw an error when registering a non-function transformer', async () => {

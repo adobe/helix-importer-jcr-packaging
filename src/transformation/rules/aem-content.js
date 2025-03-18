@@ -10,8 +10,10 @@
  * @param {string} context.siteFolderName - The name of the site.
  * @return {string} - The transformed value
  */
-export default function transform(value, { siteFolderName }) {
+export default function transform(value, context) {
   if (!value) return '';
+
+  const { siteFolderName } = context;
 
   if (value.startsWith(`/content/${siteFolderName}/`)) {
     return value;
