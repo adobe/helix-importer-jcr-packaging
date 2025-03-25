@@ -96,5 +96,19 @@ describe('transformation rules', () => {
       expect(result).to.include('path="/blogs/page1"');
       expect(result).to.include('path="/blogs/page2"');
     });
+
+    it('transformation should sanitize jcr paths', () => {
+      let content = blogPageXml;
+      content = content.replace(/\/blogs\/page2/g, '/blogs/page2{with}invalid-chars');
+      const result = transform(content, rulesFixture, context);
+
+      // Verify the field remains unchanged when transformation type is unknown
+      expect(result).to.include('path="/content/xwalk/blogs/page2-with-invalid-chars"');
+    });
+
+    it('should handle /content/ in the path', () => {
+      const result = transform(blogPageXml, rulesFixture, context);
+      expect(result).to.include('path="/content/xwalk/myfolder/page4"');
+    });
   });
 });
