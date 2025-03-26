@@ -18,7 +18,7 @@ describe('transformer loader', () => {
     // Import the transformer module
     const uppercaseTransformer = await import('../fixtures/transformation/rules/uppercase.js');
 
-    // Register the transformer
+    // manual register the transformer, not really supported in the real world
     registerTransformer('uppercase', uppercaseTransformer.default);
 
     // Create rules that use the new transformer

@@ -16,6 +16,7 @@ import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
 import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
 import { getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
+import transformers from '../fixtures/transformation/jcr-transformer-functions.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
 const ASSET_FOLDER_NAME = 'plush';
@@ -141,11 +142,8 @@ describe('packaging', () => {
       card: {
         text: 'uppercase',
         link: 'aem-content',
+        imgAlt: 'lowercase',
       },
-    };
-
-    const tFn = {
-      uppercase: (value) => value.toUpperCase(),
     };
 
     const zipFilePath = await createJcrPackage(
@@ -155,7 +153,7 @@ describe('packaging', () => {
       siteFolderName,
       assetFolderName,
       tRules,
-      tFn,
+      transformers,
     );
 
     const zipFile = readFileSync(zipFilePath);
@@ -165,6 +163,8 @@ describe('packaging', () => {
     expect(page1Xml).to.not.include('stock needs to move');
     expect(page1Xml).to.include('STOCK NEEDS TO MOVE');
     expect(page1Xml).to.include('link="/content/mysite/products/discounted"');
+    // force the UPPERCASE via the transformer to lower case
+    expect(page1Xml).to.include('imgAlt="uppercase"');
   });
 
   it('should create a JCR package with valid pages', async () => {
