@@ -9,7 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { getSanitizedJcrPath } from '../../package/packaging.utils.js';
+import {
+  getJcrPagePath,
+} from '../../package/packaging.utils.js';
 
 /**
  * Transform a value into an AEM content path by taking the value, and
@@ -25,18 +27,7 @@ import { getSanitizedJcrPath } from '../../package/packaging.utils.js';
  */
 export default function transform(value, context) {
   if (!value) return '';
-
   const { siteFolderName } = context;
-
-  if (value.startsWith('/content/')) {
-    const tokens = value.split('/');
-    // if we have more than 2 tokens and the 3rd token is not the site folder name
-    // then we slide in the site folder name at the 3rd position
-    if (tokens.length > 2 && tokens[2] !== siteFolderName) {
-      tokens.splice(2, 0, siteFolderName);
-    }
-    return getSanitizedJcrPath(tokens.join('/'));
-  }
 
   let path = value;
 
@@ -47,9 +38,5 @@ export default function transform(value, context) {
     // if the value is not a URL, then we can ignore the error
   }
 
-  const result = path.startsWith('/')
-    ? `/content/${siteFolderName}${path}`
-    : `/content/${siteFolderName}/${path}`;
-
-  return getSanitizedJcrPath(result);
+  return getJcrPagePath(path, siteFolderName);
 }

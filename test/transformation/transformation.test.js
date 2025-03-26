@@ -106,7 +106,12 @@ describe('transformation rules', () => {
       expect(result).to.include('path="/content/xwalk/blogs/page2-with-invalid-chars"');
     });
 
-    it('should handle /content/ in the path', () => {
+    it('site name equals first folder under /content/', () => {
+      const result = transform(blogPageXml, rulesFixture, context);
+      expect(result).to.include('path="/content/xwalk/page5"');
+    });
+
+    it('folder name does not match site name under /content/', () => {
       const result = transform(blogPageXml, rulesFixture, context);
       expect(result).to.include('path="/content/xwalk/myfolder/page4"');
     });
