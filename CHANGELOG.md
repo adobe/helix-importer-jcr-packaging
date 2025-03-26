@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.1...v2.0.2) (2025-03-26)
+
+
+### Bug Fixes
+
+* **sites-30112:** support transforming model field values ([#10](https://github.com/adobe/helix-importer-jcr-packaging/issues/10)) ([082c844](https://github.com/adobe/helix-importer-jcr-packaging/commit/082c84489dff628c4c51b02af2ab11de92cc50b8))
+
 ## [2.0.1](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.0...v2.0.1) (2025-03-06)
 
 
