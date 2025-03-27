@@ -104,7 +104,7 @@ export const getFilterXml = (jcrPages) => {
 };
 
 /**
- * Generate a package name based on the site folder name and the pages.
+ * Generate a package name based on the site name and the pages.
  * If there is only one page, the package name will be the site folder name
  * followed by the page name. If there are multiple pages, the package name
  * will be the site folder name.

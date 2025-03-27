@@ -139,7 +139,7 @@ const saveAssetMappings = async (assetMappings, outputDirectory) => {
  * @param {Array<string>} assetUrls - An array of asset urls that were found in the markdown.
  * @param {string} siteFolderName - The name of the site folder(s) in AEM
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
- * @returns {Promise<string>} The file path for the generated package or null if there are no pages.
+ * @returns {Promise<void>} - The promise is resolved when the package is created.
  */
 export const createJcrPackage = async (
   outputDirectory,
@@ -149,11 +149,19 @@ export const createJcrPackage = async (
   assetFolderName,
 ) => {
   if (pages.length === 0) {
-    return null;
+    return;
   }
 
   init();
-  const packageName = getPackageName(pages, siteFolderName);
+
+  let siteName = siteFolderName;
+  if (siteFolderName.startsWith('/content/')) {
+    // just pull the site name from the path
+    // eslint-disable-next-line prefer-destructuring
+    siteName = siteFolderName.split('/')[2];
+  }
+
+  const packageName = getPackageName(pages, siteName);
   const zip = new JSZip();
   const prefix = 'jcr';
 
@@ -189,6 +197,4 @@ export const createJcrPackage = async (
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
   await saveAssetMappings(assetMappings, outputDirectory);
-
-  return `${outputDirectory}/${packageName}.zip`;
 };
