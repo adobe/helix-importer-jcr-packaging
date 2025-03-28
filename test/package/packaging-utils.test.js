@@ -21,14 +21,14 @@ describe('packaging-utils', () => {
   it('test the getPropertiesXml', async () => {
     const props = getPropertiesXml();
     expect(props.propXmlPath).to.equal('META-INF/vault/properties.xml');
-    expect(props.propXml).to.contain("<?xml version='1.0' encoding='UTF-8'?>");
+    expect(props.propXml).to.contain('<?xml version="1.0" encoding="UTF-8"?>');
   });
 
   it('test the getPropertiesXml with custom props', async () => {
     const { propXmlPath, propXml } = getPropertiesXml('custom-package-name');
     expect(propXmlPath).to.equal('META-INF/vault/properties.xml');
     expect(propXml).to.contain(
-      "<entry key='name'>custom-package-name</entry>",
+      '<entry key="name">custom-package-name</entry>',
     );
   });
 
@@ -38,8 +38,8 @@ describe('packaging-utils', () => {
     const pages = [{ jcrPath: '/content/site/a' }, { jcrPath: '/content/site/b' }];
     const { filterXmlPath, filterXml } = getFilterXml(pages);
     expect(filterXmlPath).to.equal('META-INF/vault/filter.xml');
-    expect(filterXml).to.contain('<filter root=\'/content/site/a\'>');
-    expect(filterXml).to.contain('<filter root=\'/content/site/b\'>');
+    expect(filterXml).to.contain('<filter root="/content/site/a">');
+    expect(filterXml).to.contain('<filter root="/content/site/b">');
   });
 
   // write a test to cover getPackageName
@@ -87,19 +87,23 @@ describe('packaging-utils', () => {
     expect(actualJcrPath).to.equal(expectedJcrPath);
   });
 
-  // write a test to cover getJcrPagePath
   it('test the getJcrPagePath', async () => {
     // if the path does not start with /content then the jcr path should be /content/<path>
-    const jcrPath = getJcrPagePath('/products/lightroom', 'adobe');
+    // really we should not have to deal with this scenario as we should be enforcing paths
+    // start with /content for a site folder.
+    let jcrPath = getJcrPagePath('/products/lightroom', 'adobe');
     expect(jcrPath).to.equal('/content/adobe/products/lightroom');
 
     // if the path starts with /content then the jcr path should be the same
-    const jcrPath2 = getJcrPagePath('/content/adobe/products/lightroom', 'adobe');
-    expect(jcrPath2).to.equal('/content/adobe/products/lightroom');
+    jcrPath = getJcrPagePath('/content/adobe/products/lightroom', 'adobe');
+    expect(jcrPath).to.equal('/content/adobe/products/lightroom');
 
     // if the path starts with /content then the jcr path should be the same
-    const jcrPath3 = getJcrPagePath('/content/foo/bar/xyz', 'foo');
-    expect(jcrPath3).to.equal('/content/foo/bar/xyz');
+    jcrPath = getJcrPagePath('/content/foo/bar/xyz', 'foo');
+    expect(jcrPath).to.equal('/content/foo/bar/xyz');
+
+    jcrPath = getJcrPagePath('/products/lightroom', '/content/xwalk');
+    expect(jcrPath).to.equal('/content/xwalk/products/lightroom');
   });
 
   // write unit test for traverseAndUpdateAssetReferences

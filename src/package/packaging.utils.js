@@ -11,6 +11,7 @@
  */
 import he from 'he';
 import { DOMParser } from '@xmldom/xmldom';
+import { formatXML } from '../shared/xml.js';
 
 /**
  * Get the parsed XML document.
@@ -63,9 +64,9 @@ export const getPageContentChildren = (xml) => {
 export const getPropertiesXml = (packageName) => {
   const author = 'anonymous';
   const now = new Date().toISOString();
-  const propXml = `<?xml version='1.0' encoding='UTF-8'?>
-      <!DOCTYPE properties SYSTEM 'http://java.sun.com/dtd/properties.dtd'>
-      <properties>
+  let propXml = `<?xml version='1.0' encoding='UTF-8'?>
+    <!DOCTYPE properties SYSTEM 'http://java.sun.com/dtd/properties.dtd'>
+    <properties>
       <comment>FileVault Package Properties</comment>
       <entry key='description'></entry>
       <entry key='generator'>org.apache.jackrabbit.vault:3.7.1-T20231005151103-335689a8</entry>
@@ -82,8 +83,9 @@ export const getPropertiesXml = (packageName) => {
       <entry key='createdBy'>${author}</entry>
       <entry key='name'>${packageName}</entry>
       <entry key='lastModified'>${now}</entry>
-      </properties>`;
+    </properties>`;
   const propXmlPath = 'META-INF/vault/properties.xml';
+  propXml = formatXML(propXml);
   return { propXmlPath, propXml };
 };
 
@@ -93,13 +95,15 @@ export const getPropertiesXml = (packageName) => {
  * @returns the filter.xml file
  */
 export const getFilterXml = (jcrPages) => {
-  const pageFilters = jcrPages.reduce((acc, page) => `${acc}<filter root='${page.jcrPath}'>\n</filter>\n`, '');
+  const pageFilters = jcrPages.reduce((acc, page) => `${acc}<filter root='${page.jcrPath}'></filter>\n`, '');
 
-  const filterXml = `<?xml version='1.0' encoding='UTF-8'?>
+  let filterXml = `<?xml version='1.0' encoding='UTF-8'?>
     <workspaceFilter version='1.0'>
       ${pageFilters}
     </workspaceFilter>`;
   const filterXmlPath = 'META-INF/vault/filter.xml';
+
+  filterXml = formatXML(filterXml);
   return { filterXmlPath, filterXml };
 };
 
@@ -149,25 +153,28 @@ export const getSanitizedJcrPath = (jcrPath) => {
 
 /**
  * Get the JCR page path based on the site folder name and the path.
- * @param {string} path the path of the page
- * @param {string} siteFolderName the name of the site folder(s) in AEM
+ * @param {string} pagePath the path of the page
+ * @param {string} sitePath the path of the site's folder in AEM
  * @returns {string} the JCR page path
  */
-export const getJcrPagePath = (path, siteFolderName) => {
+export const getJcrPagePath = (pagePath, sitePath) => {
   let jcrPagePath;
-  if (path.startsWith('/content/')) {
-    const tokens = path.split('/');
+  if (pagePath.startsWith('/content/')) {
+    const tokens = pagePath.split('/');
     // if we have more than 2 tokens and the 3rd token is not the site folder name
     // then we slide in the site folder name at the 3rd position
-    if (tokens.length > 2 && tokens[2] !== siteFolderName) {
-      tokens.splice(2, 0, siteFolderName);
+    if (tokens.length > 2 && tokens[2] !== sitePath) {
+      tokens.splice(2, 0, sitePath);
     }
     jcrPagePath = tokens.join('/');
   } else {
-    // Remove any leading "/" from the path
     // eslint-disable-next-line no-param-reassign
-    path = path.replace(/^\/+/, '');
-    jcrPagePath = `/content/${siteFolderName}/${path}`;
+    pagePath = pagePath.replace(/^\/+/, '');
+    if (!sitePath.startsWith('/content/')) {
+      // eslint-disable-next-line no-param-reassign
+      sitePath = `/content/${sitePath}`;
+    }
+    jcrPagePath = `${sitePath}/${pagePath}`;
   }
   return getSanitizedJcrPath(jcrPagePath);
 };

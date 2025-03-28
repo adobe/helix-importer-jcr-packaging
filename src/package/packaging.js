@@ -22,6 +22,7 @@ import {
   traverseAndUpdateAssetReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
+import { formatXML } from '../shared/xml.js';
 
 let jcrPages = [];
 const ASSET_MAPPING_FILE = 'asset-mapping.json';
@@ -31,8 +32,9 @@ const init = () => {
 };
 
 const addPage = async (page, dir, prefix, zip) => {
-  zip.file(page.contentXmlPath, page.processedXml);
-  await saveFile(dir, `${prefix}/${page.contentXmlPath}`, page.processedXml);
+  const xml = formatXML(page.processedXml);
+  zip.file(page.contentXmlPath, xml);
+  await saveFile(dir, `${prefix}/${page.contentXmlPath}`, xml);
 };
 
 /**
@@ -78,7 +80,7 @@ export const getJcrPages = async (pages, siteFolderName, assetFolderPath, assetM
 })));
 
 const addFilterXml = async (dir, prefix, zip) => {
-  const { filterXmlPath, filterXml } = await getFilterXml(jcrPages);
+  const { filterXmlPath, filterXml } = getFilterXml(jcrPages);
   zip.file(filterXmlPath, filterXml);
   await saveFile(dir, `${prefix}/${filterXmlPath}`, filterXml);
 };
@@ -100,7 +102,7 @@ const getEmptyAncestorPages = (pages) => {
 
   jcrPaths.forEach((pagePath) => {
     const pathSegments = pagePath.split('/');
-    let ancestorPath = '/content';
+    let ancestorPath = '';
 
     for (let i = 2; i < pathSegments.length - 1; i += 1) {
       ancestorPath += `/${pathSegments[i]}`;
