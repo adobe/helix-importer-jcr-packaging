@@ -39,11 +39,11 @@ const addPage = async (page, dir, prefix, zip) => {
  * Updates the asset references in given xml, to point to their respective JCR paths
  * @param {string} xml - The xml content of the page
  * @param {string} pageUrl - The url of the site page
- * @param {string} assetFolderName - The name of the asset folder(s) in AEM
+ * @param {string} assetFolderPath - The path under /content/dam where the assets are stored.
  * @param {Map} assetMappings - A map to store the asset urls and their corresponding jcr paths
  * @returns {Promise<*|string>} - The updated xml content
  */
-export const updateAssetReferences = async (xml, pageUrl, assetFolderName, assetMappings) => {
+export const updateAssetReferences = async (xml, pageUrl, assetFolderPath, assetMappings) => {
   let doc;
   try {
     doc = getParsedXml(xml);
@@ -54,14 +54,14 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderName, asset
   }
 
   // Start traversal from the document root and update the asset references
-  traverseAndUpdateAssetReferences(doc.documentElement, pageUrl, assetFolderName, assetMappings);
+  traverseAndUpdateAssetReferences(doc.documentElement, pageUrl, assetFolderPath, assetMappings);
 
   const serializer = new XMLSerializer();
   return serializer.serializeToString(doc);
 };
 
 // eslint-disable-next-line max-len
-export const getJcrPages = async (pages, siteFolderName, assetFolderName, assetMappings) => Promise.all(pages.map(async (page) => ({
+export const getJcrPages = async (pages, siteFolderName, assetFolderPath, assetMappings) => Promise.all(pages.map(async (page) => ({
   path: page.path,
   sourceXml: page.data,
   pageProperties: getPageProperties(page.data),
@@ -69,7 +69,7 @@ export const getJcrPages = async (pages, siteFolderName, assetFolderName, assetM
   processedXml: await updateAssetReferences(
     page.data,
     page.url,
-    assetFolderName,
+    assetFolderPath,
     assetMappings,
   ),
   jcrPath: getJcrPagePath(page.path, siteFolderName),
@@ -137,16 +137,16 @@ const saveAssetMappings = async (assetMappings, outputDirectory) => {
  * @param {*} outputDirectory - The directory handle
  * @param {Array} pages - An array of pages
  * @param {Array<string>} assetUrls - An array of asset urls that were found in the markdown.
- * @param {string} siteFolderName - The name of the site folder(s) in AEM
- * @param {string} assetFolderName - The name of the asset folder(s) in AEM
+ * @param {string} siteContentPath - The path to the site content in AEM under /content.
+ * @param {string} assetDamPath - The path to the assets in AEM under /content/dam.
  * @returns {Promise<void>} - The promise is resolved when the package is created.
  */
 export const createJcrPackage = async (
   outputDirectory,
   pages,
   assetUrls,
-  siteFolderName,
-  assetFolderName,
+  siteContentPath,
+  assetDamPath,
 ) => {
   if (pages.length === 0) {
     return;
@@ -154,12 +154,23 @@ export const createJcrPackage = async (
 
   init();
 
-  let siteName = siteFolderName;
-  if (siteFolderName.startsWith('/content/')) {
+  let siteName = siteContentPath;
+  let assetFolder = assetDamPath;
+  if (siteContentPath.startsWith('/content/')) {
     // just pull the site name from the path
     // eslint-disable-next-line prefer-destructuring
-    siteName = siteFolderName.split('/')[2];
+    siteName = siteContentPath.split('/')[2];
   }
+
+  if (assetDamPath.startsWith('/content/dam/')) {
+    // just pull the site name from the path
+    // eslint-disable-next-line prefer-destructuring
+    assetFolder = assetDamPath.replace('/content/dam/', '');
+  }
+
+  // remove any trailing slashes
+  siteName = siteName.replace(/\/+$/, '');
+  assetFolder = assetFolder.replace(/\/+$/, '');
 
   const packageName = getPackageName(pages, siteName);
   const zip = new JSZip();
@@ -169,7 +180,7 @@ export const createJcrPackage = async (
   const assetMappings = new Map(assetUrls.map((url) => [url, '']));
 
   // add the pages
-  jcrPages = await getJcrPages(pages, siteFolderName, assetFolderName, assetMappings);
+  jcrPages = await getJcrPages(pages, siteContentPath, assetFolder, assetMappings);
   for (let i = 0; i < jcrPages.length; i += 1) {
     const page = jcrPages[i];
     // eslint-disable-next-line no-await-in-loop
