@@ -1,3 +1,10 @@
+## [2.0.5](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.4...v2.0.5) (2025-03-28)
+
+
+### Bug Fixes
+
+* issue with filter paths being wrong ([bf17964](https://github.com/adobe/helix-importer-jcr-packaging/commit/bf1796403efe99c5df99ca58f2a273a3921cfd17))
+
 ## [2.0.4](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.3...v2.0.4) (2025-03-28)
 
 
