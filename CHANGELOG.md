@@ -1,3 +1,10 @@
+## [2.0.4](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.3...v2.0.4) (2025-03-28)
+
+
+### Bug Fixes
+
+* clean up asset and site folder names ([6660480](https://github.com/adobe/helix-importer-jcr-packaging/commit/6660480f38823d785b9330e424f3055428afa69d))
+
 ## [2.0.3](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.2...v2.0.3) (2025-03-28)
 
 
