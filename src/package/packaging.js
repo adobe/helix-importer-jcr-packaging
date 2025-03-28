@@ -22,9 +22,6 @@ import {
   traverseAndUpdateAssetReferences,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
-import transform, {
-  registerTransformer,
-} from '../transformation/transformation.js';
 
 let jcrPages = [];
 const ASSET_MAPPING_FILE = 'asset-mapping.json';
@@ -64,30 +61,21 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderName, asset
 };
 
 // eslint-disable-next-line max-len
-export const getJcrPages = async (pages, siteFolderName, assetFolderName, assetMappings, rules) => Promise.all(pages.map(async (page) => {
-  const processedXml = await updateAssetReferences(
+export const getJcrPages = async (pages, siteFolderName, assetFolderName, assetMappings) => Promise.all(pages.map(async (page) => ({
+  path: page.path,
+  sourceXml: page.data,
+  pageProperties: getPageProperties(page.data),
+  pageContentChildren: getPageContentChildren(page.data),
+  processedXml: await updateAssetReferences(
     page.data,
     page.url,
     assetFolderName,
     assetMappings,
-  );
-
-  const transformed = transform(processedXml, rules, {
-    siteFolderName,
-    assetFolderName,
-  });
-
-  return {
-    path: page.path,
-    sourceXml: page.data,
-    pageProperties: getPageProperties(page.data),
-    pageContentChildren: getPageContentChildren(page.data),
-    processedXml: transformed,
-    jcrPath: getJcrPagePath(page.path, siteFolderName),
-    contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
-    url: page.url,
-  };
-}));
+  ),
+  jcrPath: getJcrPagePath(page.path, siteFolderName),
+  contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
+  url: page.url,
+})));
 
 const addFilterXml = async (dir, prefix, zip) => {
   const { filterXmlPath, filterXml } = await getFilterXml(jcrPages);
@@ -151,10 +139,7 @@ const saveAssetMappings = async (assetMappings, outputDirectory) => {
  * @param {Array<string>} assetUrls - An array of asset urls that were found in the markdown.
  * @param {string} siteFolderName - The name of the site folder(s) in AEM
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
- * @param {Object} transformationRules - The transformation rules to apply to the pages.
- * @param {Object<string, function>} transformationFunctions - The transformation rules to
- * apply to the pages.
- * @returns {Promise<string>} The path to the generated package.
+ * @returns {Promise<void>} - The promise is resolved when the package is created.
  */
 export const createJcrPackage = async (
   outputDirectory,
@@ -162,38 +147,29 @@ export const createJcrPackage = async (
   assetUrls,
   siteFolderName,
   assetFolderName,
-  transformationRules,
-  transformationFunctions,
 ) => {
   if (pages.length === 0) {
-    return null;
-  }
-
-  // for each transformation object register the name and function
-  if (transformationFunctions !== null
-      && typeof transformationFunctions === 'object'
-      && !Array.isArray(transformationFunctions)) {
-    Object.entries(transformationFunctions).forEach(([key, value]) => {
-      registerTransformer(key, value);
-    });
+    return;
   }
 
   init();
-  const packageName = getPackageName(pages, siteFolderName);
+
+  let siteName = siteFolderName;
+  if (siteFolderName.startsWith('/content/')) {
+    // just pull the site name from the path
+    // eslint-disable-next-line prefer-destructuring
+    siteName = siteFolderName.split('/')[2];
+  }
+
+  const packageName = getPackageName(pages, siteName);
   const zip = new JSZip();
   const prefix = 'jcr';
 
   // create a map using the provided asset urls as keys (values will be populated later)
   const assetMappings = new Map(assetUrls.map((url) => [url, '']));
 
-  jcrPages = await getJcrPages(
-    pages,
-    siteFolderName,
-    assetFolderName,
-    assetMappings,
-    transformationRules,
-  );
-
+  // add the pages
+  jcrPages = await getJcrPages(pages, siteFolderName, assetFolderName, assetMappings);
   for (let i = 0; i < jcrPages.length; i += 1) {
     const page = jcrPages[i];
     // eslint-disable-next-line no-await-in-loop
@@ -221,6 +197,4 @@ export const createJcrPackage = async (
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
   await saveAssetMappings(assetMappings, outputDirectory);
-
-  return `${outputDirectory}/${packageName}.zip`;
 };

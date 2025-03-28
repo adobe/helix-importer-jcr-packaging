@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 /* eslint-env mocha */
-import JSZip from 'jszip';
-import { readFileSync } from 'fs';
 import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
 import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
@@ -41,14 +39,14 @@ const getImageUrlKeysArray = async () => loadFile(IMAGE_MAPPING_PATH)
 
 // Test suite for packaging.js
 describe('packaging', () => {
-  let outDir;
+  let outdir;
 
   beforeEach(() => {
-    outDir = `./output/test-${Date.now()}`;
+    outdir = `./output/test-${Date.now()}`;
   });
 
   afterEach(() => {
-    rm('./output', { recursive: true, force: true });
+    rm(outdir, { recursive: true, force: true });
   });
 
   // compare the processed xml with the expected xml
@@ -125,48 +123,6 @@ describe('packaging', () => {
     // No assertions needed, just ensure no errors are thrown
   });
 
-  it('should create a JCR package with rules', async () => {
-    const pages = [
-      {
-        path: '/content/mysite/page1',
-        data: await loadFile(ORIGINAL_XML_PATH),
-        url: PAGE_URL,
-      },
-    ];
-    const imageUrls = await getImageUrlKeysArray();
-    const siteFolderName = 'mysite';
-    const assetFolderName = 'assets';
-
-    const tRules = {
-      card: {
-        text: 'uppercase',
-        link: 'aem-content',
-      },
-    };
-
-    const tFn = {
-      uppercase: (value) => value.toUpperCase(),
-    };
-
-    const zipFilePath = await createJcrPackage(
-      outDir,
-      pages,
-      imageUrls,
-      siteFolderName,
-      assetFolderName,
-      tRules,
-      tFn,
-    );
-
-    const zipFile = readFileSync(zipFilePath);
-    const zip = new JSZip();
-    await zip.loadAsync(zipFile);
-    const page1Xml = await zip.file('jcr_root/content/mysite/page1/.content.xml').async('string');
-    expect(page1Xml).to.not.include('stock needs to move');
-    expect(page1Xml).to.include('STOCK NEEDS TO MOVE');
-    expect(page1Xml).to.include('link="/content/mysite/products/discounted"');
-  });
-
   it('should create a JCR package with valid pages', async () => {
     const pages = [
       {
@@ -179,7 +135,7 @@ describe('packaging', () => {
     const siteFolderName = 'site';
     const assetFolderName = 'assets';
 
-    await createJcrPackage(outDir, pages, imageUrls, siteFolderName, assetFolderName);
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
   });
 
@@ -195,7 +151,7 @@ describe('packaging', () => {
     const siteFolderName = 'site';
     const assetFolderName = 'assets';
 
-    await createJcrPackage(outDir, pages, imageUrls, siteFolderName, assetFolderName);
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
   });
 });
