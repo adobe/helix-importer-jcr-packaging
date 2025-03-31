@@ -1,3 +1,10 @@
+## [2.0.6](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.5...v2.0.6) (2025-03-31)
+
+
+### Bug Fixes
+
+* packaging is adding additional files ([068b3f6](https://github.com/adobe/helix-importer-jcr-packaging/commit/068b3f61960167be4b72dff321ad28e205b95dcb))
+
 ## [2.0.5](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.4...v2.0.5) (2025-03-28)
 
 
