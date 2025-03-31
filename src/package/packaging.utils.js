@@ -160,6 +160,11 @@ export const getSanitizedJcrPath = (jcrPath) => {
 export const getJcrPagePath = (pagePath, sitePath) => {
   let jcrPagePath;
   if (pagePath.startsWith('/content/')) {
+    // if the page already starts with the pagePath, then we are good
+    if (pagePath.startsWith(sitePath)) {
+      return getSanitizedJcrPath(pagePath);
+    }
+
     const tokens = pagePath.split('/');
     // if we have more than 2 tokens and the 3rd token is not the site folder name
     // then we slide in the site folder name at the 3rd position

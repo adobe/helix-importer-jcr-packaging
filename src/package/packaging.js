@@ -104,7 +104,10 @@ const getEmptyAncestorPages = (pages) => {
     const pathSegments = pagePath.split('/');
     let ancestorPath = '';
 
-    for (let i = 2; i < pathSegments.length - 1; i += 1) {
+    // all pagePath should start with /content by now
+    const startIndex = pagePath.startsWith('/content') ? 1 : 2;
+
+    for (let i = startIndex; i < pathSegments.length - 1; i += 1) {
       ancestorPath += `/${pathSegments[i]}`;
 
       if (!seenAncestors.has(ancestorPath)) {

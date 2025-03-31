@@ -91,7 +91,10 @@ describe('packaging-utils', () => {
     // if the path does not start with /content then the jcr path should be /content/<path>
     // really we should not have to deal with this scenario as we should be enforcing paths
     // start with /content for a site folder.
-    let jcrPath = getJcrPagePath('/products/lightroom', 'adobe');
+    let jcrPath = getJcrPagePath('/content/adobe/products/lightroom', '/content/adobe');
+    expect(jcrPath).to.equal('/content/adobe/products/lightroom');
+
+    jcrPath = getJcrPagePath('/products/lightroom', 'adobe');
     expect(jcrPath).to.equal('/content/adobe/products/lightroom');
 
     // if the path starts with /content then the jcr path should be the same

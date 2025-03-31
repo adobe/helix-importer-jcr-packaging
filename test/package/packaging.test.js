@@ -116,8 +116,8 @@ describe('packaging', () => {
     const dir = {}; // Mock directory handle
     const pages = [];
     const imageUrls = [];
-    const siteFolderName = 'site';
-    const assetFolderName = 'assets';
+    const siteFolderName = '/content/site';
+    const assetFolderName = '/content/dam/assets';
 
     await createJcrPackage(dir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
@@ -132,8 +132,8 @@ describe('packaging', () => {
       },
     ];
     const imageUrls = await getImageUrlKeysArray();
-    const siteFolderName = 'site';
-    const assetFolderName = 'assets';
+    const siteFolderName = '/content/site';
+    const assetFolderName = '/content/dam/assets';
 
     await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
@@ -148,8 +148,8 @@ describe('packaging', () => {
       },
     ];
     const imageUrls = await getImageUrlKeysArray();
-    const siteFolderName = 'site';
-    const assetFolderName = 'assets';
+    const siteFolderName = '/content/site';
+    const assetFolderName = '/content/dam/assets';
 
     await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
