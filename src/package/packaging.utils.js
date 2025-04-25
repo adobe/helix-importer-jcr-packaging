@@ -307,6 +307,19 @@ function updateJcrAssetMap(jcrAssetMap, originalPath, updatedAssetPath, pageUrl)
 }
 
 /**
+ * Check if a string is HTML encoded.
+ * @param {string} str - The string to check
+ * @example
+ * isHtmlEncoded('&lt;p&gt;Hello World&lt;/p&gt;')
+ * // Returns: true
+ * @returns {boolean} - true if the string is HTML encoded, false otherwise
+ */
+function isHtmlEncoded(str) {
+  const decoded = he.decode(str);
+  return decoded !== str;
+}
+
+/**
  * Traverse the DOM tree and update the asset references to point to the JCR paths.
  * @param {*} node - The node to traverse
  * @param {string} pageUrl - The URL of the page
@@ -317,9 +330,12 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
   if (node.nodeType === 1) { // Element node
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
+      let attrValue = node.getAttribute(attr.name);
+      const isEncoded = isHtmlEncoded(node.getAttribute(attr.name));
       // Unescape HTML entities (needs double decoding as asset urls are double encoded in the xml)
-      // console.log(`Checking attribute: ${attr.name}`);
-      let attrValue = he.decode(he.decode(node.getAttribute(attr.name)));
+      if (isEncoded) {
+        attrValue = he.decode(he.decode(attrValue));
+      }
       const keys = [...jcrAssetMap.keys()];
       keys.forEach((key) => {
         if (attrValue.includes(key)) {
@@ -328,7 +344,15 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
           updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
           // update the attribute value with the new jcr path
           attrValue = attrValue.replace(key, jcrAssetPath);
-          node.setAttribute(attr.name, he.encode(attrValue));
+          node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
+        } else if (key.startsWith('http')) { // if the asset was referenced more than once, and first reference was already processed
+          const url = new URL(key);
+          const relAssetPath = url.pathname; // get the relative asset path
+          if (attrValue.includes(relAssetPath)) {
+            // use the jcr asset path from the map, since it was already processed
+            attrValue = attrValue.replace(relAssetPath, jcrAssetMap.get(key));
+            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
+          }
         }
       });
     }
