@@ -201,4 +201,96 @@ describe('packaging-utils', () => {
     input = '/content/dam/folder/';
     expect(getSanitizedJcrPath(input)).to.equal(input);
   });
+
+  it('should correctly handle encoded and non-encoded attribute values', () => {
+    const document = getParsedXml(`<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <jcr:content>
+    <root>
+      <!-- Regular non-encoded attributes -->
+      <block1 image="/images/simple.jpg" 
+              background="/images/background.png"/>
+      
+      <!-- HTML content with additional encoding -->
+      <block2 content="&amp;lt;img src=&amp;quot;/images/double-encoded.jpg&amp;quot;&amp;gt;"
+              data="Link to &amp;quot;/images/double-quoted.png&amp;quot;"/>      
+    </root>
+  </jcr:content>
+</jcr:root>
+  `);
+
+    const pageUrl = 'http://example.com/test/page.html';
+    const assetFolderName = 'test-site';
+    const jcrAssetMap = new Map([
+      ['/images/simple.jpg', '/content/dam/test-site/images/simple.jpg'],
+      ['/images/background.png', '/content/dam/test-site/images/background.png'],
+      ['/images/double-encoded.jpg', '/content/dam/test-site/images/double-encoded.jpg'],
+      ['/images/double-quoted.png', '/content/dam/test-site/images/double-quoted.png'],
+    ]);
+
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
+
+    // Test non-encoded attributes (should remain non-encoded)
+    const block1 = document.getElementsByTagName('block1')[0];
+    expect(block1.getAttribute('image')).to.equal('/content/dam/test-site/images/simple.jpg');
+    expect(block1.getAttribute('background')).to.equal('/content/dam/test-site/images/background.png');
+
+    // Test HTML content that was double-encoded
+    const block2 = document.getElementsByTagName('block2')[0];
+    expect(block2.getAttribute('content')).to.equal(
+      he.encode('<img src="/content/dam/test-site/images/double-encoded.jpg">'),
+    );
+    expect(block2.getAttribute('data')).to.equal(
+      he.encode('Link to "/content/dam/test-site/images/double-quoted.png"'),
+    );
+  });
+
+  it('should handle multiple references to same asset', () => {
+    const document = getParsedXml(`<?xml version="1.0" encoding="UTF-8"?>
+  <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <jcr:content>
+      <root>
+        <block1 image="/content/themes/img.jpg"/>
+        
+        <!-- Same image but within HTML content -->
+        <block2 text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"/>
+        
+      </root>
+    </jcr:content>
+  </jcr:root>
+    `);
+
+    const pageUrl = 'https://www.adobe.com.au/page.html';
+    const assetFolderName = 'adobe';
+
+    // Simulate the scenario where the first occurrence updated the key to absolute URL
+    const jcrAssetMap = new Map([
+      ['/content/themes/img.jpg',
+        '/content/dam/adobe/content/themes/img.jpg'],
+    ]);
+
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
+
+    // Test relative path reference
+    const block1 = document.getElementsByTagName('block1')[0];
+    expect(block1.getAttribute('image')).to.equal(
+      '/content/dam/adobe/content/themes/img.jpg',
+    );
+
+    // Test relative path in HTML content
+    const block2 = document.getElementsByTagName('block2')[0];
+    expect(block2.getAttribute('text')).to.equal(
+      '<img src="/content/dam/adobe/content/themes/img.jpg">',
+    );
+  });
 });
