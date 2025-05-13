@@ -331,10 +331,14 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
       let attrValue = node.getAttribute(attr.name);
-      const isEncoded = isHtmlEncoded(node.getAttribute(attr.name));
-      // Unescape HTML entities (needs double decoding as asset urls are double encoded in the xml)
-      if (isEncoded) {
-        attrValue = he.decode(he.decode(attrValue));
+      let isEncoded = false;
+      // check non-'text' attributes for encoding
+      if (attr.name !== 'text') {
+        isEncoded = isHtmlEncoded(attrValue);
+        if (isEncoded) {
+          // Unescape HTML (needs double decoding as asset urls are double encoded in the xml)
+          attrValue = he.decode(he.decode(attrValue));
+        }
       }
       const keys = [...jcrAssetMap.keys()];
       keys.forEach((key) => {
