@@ -1,3 +1,10 @@
+## [2.0.7](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.6...v2.0.7) (2025-05-20)
+
+
+### Bug Fixes
+
+* empty pages are overwriting existing content ([afdb9b3](https://github.com/adobe/helix-importer-jcr-packaging/commit/afdb9b3507c8f5e5cc8475af3aeb0b9ff162a455))
+
 ## [2.0.6](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.5...v2.0.6) (2025-03-31)
 
 

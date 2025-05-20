@@ -1,6 +1,6 @@
 {
   "name": "@adobe/helix-importer-jcr-packaging",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "helix-importer-jcr-packaging",
   "main": "src/index.js",
   "type": "module",
