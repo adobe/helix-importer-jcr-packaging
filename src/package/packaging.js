@@ -20,6 +20,7 @@ import {
   getPackageName,
   getJcrPagePath,
   traverseAndUpdateAssetReferences,
+  getEmptyPageTemplate,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
 import { formatXML } from '../shared/xml.js';
@@ -95,10 +96,7 @@ const getEmptyAncestorPages = (pages) => {
   const seenAncestors = new Set();
   const jcrPaths = pages.map((page) => page.jcrPath);
   const emptyAncestors = [];
-  const ancestorXml = `<?xml version="1.0" encoding="UTF-8"?>
-      <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">
-          <jcr:content cq:template="/libs/core/franklin/templates/page" jcr:primaryType="cq:PageContent" sling:resourceType="core/franklin/components/page/v1/page"/>
-      </jcr:root>`;
+  const ancestorXml = getEmptyPageTemplate();
 
   jcrPaths.forEach((pagePath) => {
     const pathSegments = pagePath.split('/');
@@ -110,7 +108,7 @@ const getEmptyAncestorPages = (pages) => {
     for (let i = startIndex; i < pathSegments.length - 1; i += 1) {
       ancestorPath += `/${pathSegments[i]}`;
 
-      if (!seenAncestors.has(ancestorPath)) {
+      if (!seenAncestors.has(ancestorPath) && !jcrPaths.includes(ancestorPath)) {
         seenAncestors.add(ancestorPath);
         emptyAncestors.push({
           jcrPath: ancestorPath,

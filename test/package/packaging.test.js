@@ -13,7 +13,7 @@
 import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
 import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
-import { getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
+import { getEmptyPageTemplate, getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
 const ASSET_FOLDER_NAME = 'plush';
@@ -121,6 +121,47 @@ describe('packaging', () => {
 
     await createJcrPackage(dir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
+  });
+
+  it('should create a jcr package with empty ancestor pages', async () => {
+    const pages = [
+      {
+        type: 'jcr',
+        path: '/about/golf',
+        data: '<?xml version="1.0" encoding="UTF-8"?>\n<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">\n  <jcr:content cq:template="/libs/core/franklin/templates/page" sling:resourceType="core/franklin/components/page/v1/page" jcr:primaryType="cq:PageContent" jcr:title="Golfing" jcr:description="Golfing" modelFields="[jcr:title,jcr:description,keywords]">\n    <root jcr:primaryType="nt:unstructured" sling:resourceType="core/franklin/components/root/v1/root">\n      <section sling:resourceType="core/franklin/components/section/v1/section" jcr:primaryType="nt:unstructured" modelFields="[name,style]"></section>\n    </root>\n  </jcr:content>\n</jcr:root>',
+        url: 'https://www.domain.com/about/golf',
+      },
+      {
+        type: 'jcr',
+        path: '/about/golf/team',
+        data: '<?xml version="1.0" encoding="UTF-8"?>\n<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">\n  <jcr:content cq:template="/libs/core/franklin/templates/page" sling:resourceType="core/franklin/components/page/v1/page" jcr:primaryType="cq:PageContent" jcr:title="Team" jcr:description="Golf TEam" modelFields="[jcr:title,jcr:description,keywords]">\n    <root jcr:primaryType="nt:unstructured" sling:resourceType="core/franklin/components/root/v1/root">\n      <section sling:resourceType="core/franklin/components/section/v1/section" jcr:primaryType="nt:unstructured" modelFields="[name,style]"></section>\n    </root>\n  </jcr:content>\n</jcr:root>',
+        url: 'https://www.domain.com/about/golf/team',
+      },
+    ];
+    const template = getEmptyPageTemplate();
+
+    const imageUrls = [];
+    const siteFolderName = '/content/domain';
+    const assetFolderName = '/content/dam/domain';
+
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
+    const teamXML = await loadFile(`../../${outdir}/jcr/jcr_root/content/domain/about/golf/team/.content.xml`);
+    expect(teamXML).to.not.equal(getEmptyPageTemplate());
+
+    const golfXML = await loadFile(`../../${outdir}/jcr/jcr_root/content/domain/about/golf/.content.xml`);
+    expect(golfXML).to.not.equal(getEmptyPageTemplate());
+
+    const emptyPages = [
+      `../../${outdir}/jcr/jcr_root/content/domain/about/.content.xml`,
+      `../../${outdir}/jcr/jcr_root/content/domain/.content.xml`,
+      `../../${outdir}/jcr/jcr_root/content/.content.xml`,
+    ];
+
+    const results = emptyPages.map(async (page) => {
+      const xml = await loadFile(page);
+      expect(xml).to.be.equal(template);
+    });
+    await Promise.all(results);
   });
 
   it('should create a JCR package with valid pages', async () => {
