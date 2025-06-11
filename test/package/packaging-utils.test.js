@@ -117,7 +117,7 @@ describe('packaging-utils', () => {
     <root>
       <section>
         <block hero_image="https://domain.com/media_a.jpeg"></block>
-        <text_1 text="&lt;p&gt;&lt;img src=&quot;/car.jpeg?width=750&amp;#x26;format=jpeg&amp;#x26;optimize=medium&quot;&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;/boat.jpeg?width=750&amp;#x26;format=jpeg&amp;#x26;optimize=medium&quot;&gt;&lt;/p&gt;"/>
+        <text_1 text="&lt;p&gt;&lt;img src=&quot;/car.jpeg?width=750&amp;format=jpeg&amp;optimize=medium&quot;&gt;&lt;/p&gt;&lt;p&gt;&lt;img src=&quot;/boat.jpeg?width=750&amp;format=jpeg&amp;optimize=medium&quot;&gt;&lt;/p&gt;"/>
         <block_1>
           <item_0 image="./c.png"></item_0>
           <item_1 image="./folder/d.png"></item_1>
@@ -159,9 +159,7 @@ describe('packaging-utils', () => {
     expect(image[0].getAttribute('fileReference')).to.equal('/content/dam/xwalk/folder/e.png');
 
     // test to see if the text has been updated
-    expect(text[0].getAttribute('text')).to.equal(
-      he.encode('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>'),
-    );
+    expect(text[0].getAttribute('text')).to.equal('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>');
   });
 
   it('test for getSanitizedJcrPath', () => {

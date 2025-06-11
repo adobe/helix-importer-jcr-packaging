@@ -328,6 +328,7 @@ function isHtmlEncoded(str) {
  */
 export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName, jcrAssetMap) => {
   if (node.nodeType === 1) { // Element node
+    const siteOrigin = new URL(pageUrl).origin;
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
       let attrValue = node.getAttribute(attr.name);
@@ -349,10 +350,26 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
           // update the attribute value with the new jcr path
           attrValue = attrValue.replace(key, jcrAssetPath);
           node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
-        } else if (key.startsWith('http')) { // if the asset was referenced more than once, and first reference was already processed
+        } else if (key.startsWith(siteOrigin)) { // asset may have been referenced more than once
+          // Scenario: In the following asset path mapping, assume the asset has been relatively
+          // referenced in two pages: A & B
+          // {
+          //     "/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg": ""
+          // }
+
+          // A. During processing of page A, the asset path is updated to:
+          // {
+          //     "https://foo.com/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg": "/content/dam/foo/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg"
+          // }
+
+          // B. During processing of page B, we first try to check if the key "https://foo.com/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg"
+          // occurs in any attribute value (first 'if' condition), but since the key is now an
+          // absolute url (starting with the site origin) it is may not be found in the attrValue.
+          // Provided, the key was not found in the first if condition, and it starts with the
+          // site origin, we can assume that the asset has already been processed once.
           const url = new URL(key);
           const relAssetPath = url.pathname; // get the relative asset path
-          if (attrValue.includes(relAssetPath)) {
+          if (attrValue.includes(relAssetPath)) { // check if the relative path is in the attrValue
             // use the jcr asset path from the map, since it was already processed
             attrValue = attrValue.replace(relAssetPath, jcrAssetMap.get(key));
             node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
