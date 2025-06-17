@@ -294,19 +294,6 @@ export function getFullAssetUrl(assetReference, pageUrl) {
 }
 
 /**
- * Update the JCR asset map with the jcr asset path.
- * @param {Map} jcrAssetMap - The map of asset references to their corresponding JCR paths
- * @param {string} originalPath - The original asset path
- * @param {string} updatedAssetPath - The updated jcr asset path
- * @param {string} pageUrl - The URL of the page
- */
-function updateJcrAssetMap(jcrAssetMap, originalPath, updatedAssetPath, pageUrl) {
-  const fullyQualifiedUrl = getFullAssetUrl(originalPath, pageUrl);
-  jcrAssetMap.delete(originalPath); // delete the original path entry first
-  jcrAssetMap.set(fullyQualifiedUrl, updatedAssetPath); // add the new mapping entry
-}
-
-/**
  * Check if a string is HTML encoded.
  * @param {string} str - The string to check
  * @example
@@ -345,9 +332,6 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       keys.forEach((key) => {
         if (attrValue.includes(key)) {
           const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
-          // update the map with the new jcr path
-          updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
-          // update the attribute value with the new jcr path
           attrValue = attrValue.replace(key, jcrAssetPath);
           node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
         } else if (key.startsWith(siteOrigin)) { // asset may have been referenced more than once
