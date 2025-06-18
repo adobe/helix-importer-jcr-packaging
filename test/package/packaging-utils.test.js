@@ -162,21 +162,75 @@ describe('packaging-utils', () => {
     expect(text[0].getAttribute('text')).to.equal('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>');
   });
 
-  it('should update all asset references in the DOM tree', () => {
+  it('should update all relative asset references in the DOM tree', () => {
     const document = getParsedXml(`
       <section>
         <block_0>
-          <item image="./c.png"></item>
+          <item image="./cat.png"></item>
         </block_0>
         <block_1>
-          <item image="./c.png"></item>
+          <item image="./cat.png"></item>
         </block_1>
+        <block_2>
+          <item image="../dog.png"></item>
+        </block_2>
+        <block_3>
+          <item image="../dog.png"></item>
+        </block_3>        
+        <block_4>
+          <item image="asset/bird.png"></item>
+        </block_4>
+        <block_5>
+          <item image="asset/bird.png"></item>
+        </block_5>        
       </section>
     `);
     const pageUrl = 'http://example.com/folderXYZ/page.html';
     const assetFolderName = 'xwalk';
     const jcrAssetMap = new Map([
-      ['./c.png', '/content/dam/xwalk/folderXYZ/c.png'],
+      ['./cat.png', '/content/dam/xwalk/folderxyz/cat.png'],
+      ['../dog.png', '/content/dam/xwalk/dog.png'],
+      ['asset/bird.png', '/content/dam/xwalk/folderxyz/asset/bird.png'],
+    ]);
+
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
+
+    const blocks0 = document.getElementsByTagName('block_0');
+    const blocks1 = document.getElementsByTagName('block_1');
+    const blocks2 = document.getElementsByTagName('block_2');
+    const blocks3 = document.getElementsByTagName('block_3');
+    const blocks4 = document.getElementsByTagName('block_4');
+    const blocks5 = document.getElementsByTagName('block_5');
+
+    // for each block test to see if the attribute has been updated
+    expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/cat.png'); // Same directory
+    expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/cat.png'); // Same directory
+    expect(blocks2[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/dog.png'); // Parent directory
+    expect(blocks3[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/dog.png'); // Parent directory
+    expect(blocks4[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/asset/bird.png'); // sub asset folder
+    expect(blocks5[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/asset/bird.png'); // sub asset folder
+  });
+
+  it('should update all asset references in the DOM tree', () => {
+    const document = getParsedXml(`
+      <section>
+        <block_0>
+          <item image="/-/media/projects/foo/cat.png"></item>
+        </block_0>
+        <block_1>
+          <item image="/-/media/projects/foo/cat.png"></item>
+        </block_1>
+      </section>
+    `);
+    const pageUrl = 'http://example.com/foobar/page.html';
+    const assetFolderName = 'xwalk';
+    const jcrAssetMap = new Map([
+      ['/-/media/projects/foo/cat.png', ''],
     ]);
 
     traverseAndUpdateAssetReferences(
@@ -190,8 +244,8 @@ describe('packaging-utils', () => {
     const blocks1 = document.getElementsByTagName('block_1');
 
     // for each block test to see if the attribute has been updated
-    expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
-    expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
+    expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/-/media/projects/foo/cat.png');
+    expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/-/media/projects/foo/cat.png');
   });
 
   it('test for getSanitizedJcrPath', () => {
