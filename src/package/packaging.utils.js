@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import he from 'he';
+import path from 'path';
 import { DOMParser } from '@xmldom/xmldom';
 import { formatXML } from '../shared/xml.js';
 
@@ -194,21 +195,21 @@ export const getJcrPagePath = (pagePath, sitePath) => {
  * @returns {string} the JCR path for the asset.
  */
 export const getJcrAssetPath = (assetUrl, assetFolderName) => {
-  let path = assetUrl.pathname;
+  let assetPath = assetUrl.pathname;
   let jcrAssetPath;
   // Extract file extension (only the last part)
-  const lastDotIndex = path.lastIndexOf('.');
+  const lastDotIndex = assetPath.lastIndexOf('.');
   let extension = '';
 
   // if there is a valid extension, remove it from the path
-  if (lastDotIndex !== -1 && lastDotIndex > path.lastIndexOf('/')) {
-    extension = path.substring(lastDotIndex);
+  if (lastDotIndex !== -1 && lastDotIndex > assetPath.lastIndexOf('/')) {
+    extension = assetPath.substring(lastDotIndex);
     // Remove only the last extension from path
-    path = path.substring(0, lastDotIndex);
+    assetPath = assetPath.substring(0, lastDotIndex);
   }
 
-  if (path.startsWith('/content/dam/')) {
-    const tokens = path.split('/');
+  if (assetPath.startsWith('/content/dam/')) {
+    const tokens = assetPath.split('/');
     const assetFolderTokens = assetFolderName.split('/');
 
     // Find and remove existing occurrence of assetFolderName
@@ -226,8 +227,8 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
     jcrAssetPath = `${tokens.join('/')}${extension}`;
   } else {
     // replace media_ with media1_ in path to avoid conflicts with the media folder
-    path = path.replace('/media_', '/media1_');
-    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`;
+    assetPath = assetPath.replace('/media_', '/media1_');
+    jcrAssetPath = `/content/dam/${assetFolderName}${assetPath}${extension}`;
   }
   return getSanitizedJcrPath(jcrAssetPath).toLowerCase();
 };
@@ -320,41 +321,19 @@ export function getFullAssetUrl(assetReference, pageUrl) {
  */
 export function getRelativeAssetPath(pageUrl, assetPathName) {
   const pagePath = new URL(pageUrl).pathname;
-
-  // Resolve assetKey against the pageUrl without nested ternary
   const assetPath = new URL(assetPathName, pageUrl).pathname;
 
   // Get the directory of the current page
-  const pageDir = pagePath.endsWith('/')
-    ? pagePath
-    : pagePath.substring(0, pagePath.lastIndexOf('/') + 1);
+  const pageDir = pagePath.endsWith('/') ? pagePath : path.posix.dirname(pagePath);
 
-  // Remove common prefix
-  let i = 0;
-  while (i < pageDir.length && i < assetPath.length && pageDir[i] === assetPath[i]) {
-    i += 1;
-  }
-  // Count how many directories to go up from pageDir
-  const upDirs = pageDir.slice(i).split('/').filter(Boolean).length;
-  let relPath = '../'.repeat(upDirs) + assetPath.slice(i);
+  // Get the relative path using path.posix.relative
+  let relPath = path.posix.relative(pageDir, assetPath);
 
-  // Remove leading './' only for subdirectory case (i.e., if there's a slash after './')
-  if (relPath.startsWith('./') && relPath.slice(2).includes('/')) {
-    relPath = relPath.slice(2);
-  }
-
-  // If the relPath does not start with '.' or '/', and does not contain a '/',
-  // it's a filename in the same dir: prepend './'
-  if (
-    !relPath.startsWith('.')
-    && !relPath.startsWith('/')
-    && !relPath.includes('/')
-  ) {
+  // For same-directory files, prepend './'
+  if (!relPath.startsWith('.') && !relPath.startsWith('/')) {
     relPath = `./${relPath}`;
   }
 
-  // Normalize slashes
-  relPath = relPath.replace(/\/+/, '/');
   return relPath;
 }
 
