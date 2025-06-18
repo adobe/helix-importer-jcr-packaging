@@ -1,3 +1,10 @@
+## [2.0.8](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.7...v2.0.8) (2025-06-18)
+
+
+### Bug Fixes
+
+* **14:** Multiple image paths are not being updated ([#15](https://github.com/adobe/helix-importer-jcr-packaging/issues/15)) ([03b67b1](https://github.com/adobe/helix-importer-jcr-packaging/commit/03b67b1a0ad3332624f5621d98c8901db5cbe71e))
+
 ## [2.0.7](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.6...v2.0.7) (2025-05-20)
 
 
