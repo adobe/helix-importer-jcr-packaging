@@ -162,6 +162,38 @@ describe('packaging-utils', () => {
     expect(text[0].getAttribute('text')).to.equal('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>');
   });
 
+  it('should update all asset references in the DOM tree', () => {
+    const document = getParsedXml(`
+      <section>
+        <block_0>
+          <item image="./c.png"></item>
+        </block_0>
+        <block_1>
+          <item image="./c.png"></item>
+        </block_1>
+      </section>
+    `);
+    const pageUrl = 'http://example.com/folderXYZ/page.html';
+    const assetFolderName = 'xwalk';
+    const jcrAssetMap = new Map([
+      ['./c.png', '/content/dam/xwalk/folderXYZ/c.png'],
+    ]);
+
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
+
+    const blocks0 = document.getElementsByTagName('block_0');
+    const blocks1 = document.getElementsByTagName('block_1');
+
+    // for each block test to see if the attribute has been updated
+    expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
+    expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
+  });
+
   it('test for getSanitizedJcrPath', () => {
     // should replace invalid folder name characters
     let input = '/content/dam/inva*lid/fol:der/image.jpg';
