@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import he from 'he';
-import path from 'path';
+import path from 'path-browserify';
 import { DOMParser } from '@xmldom/xmldom';
 import { formatXML } from '../shared/xml.js';
 
@@ -324,10 +324,10 @@ export function getRelativeAssetPath(pageUrl, assetPathName) {
   const assetPath = new URL(assetPathName, pageUrl).pathname;
 
   // Get the directory of the current page
-  const pageDir = pagePath.endsWith('/') ? pagePath : path.posix.dirname(pagePath);
+  const pageDir = pagePath.endsWith('/') ? pagePath : path.dirname(pagePath);
 
-  // Get the relative path using path.posix.relative
-  let relPath = path.posix.relative(pageDir, assetPath);
+  // Get the relative path using path.relative
+  let relPath = path.relative(pageDir, assetPath);
 
   // For same-directory files, prepend './'
   if (!relPath.startsWith('.') && !relPath.startsWith('/')) {
