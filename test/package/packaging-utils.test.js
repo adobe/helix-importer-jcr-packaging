@@ -373,11 +373,11 @@ describe('packaging-utils', () => {
     it('should handle files in subdirectories', () => {
       // Test file in a subdirectory
       expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/asset/bird.png'))
-        .to.equal('asset/bird.png');
+        .to.equal('./asset/bird.png');
 
       // Test file in a deeper subdirectory
       expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/images/sub/photo.jpg'))
-        .to.equal('images/sub/photo.jpg');
+        .to.equal('./images/sub/photo.jpg');
     });
 
     it('should handle files in parent directories', () => {
