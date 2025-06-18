@@ -318,7 +318,7 @@ export function getFullAssetUrl(assetReference, pageUrl) {
  * @param {string} assetPathName - The key of the asset
  * @returns {string} the relative asset path
  */
-function getRelativeAssetPath(pageUrl, assetPathName) {
+export function getRelativeAssetPath(pageUrl, assetPathName) {
   const pagePath = new URL(pageUrl).pathname;
 
   // Resolve assetKey against the pageUrl without nested ternary
@@ -437,10 +437,18 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
           const assetPathName = url.pathname;
           // get the relative asset path (w.r.t. the page)
           const relativeAssetPath = getRelativeAssetPath(pageUrl, assetPathName);
-          // check for page relative asset path
+          const normalizedRelativeAssetPath = relativeAssetPath.replace(/^\.\//, ''); // remove leading './' if present
+          // check for page relative asset path (same dir or subdir or parent dir)
           if (attrValue.includes(relativeAssetPath)) {
             // use the jcr asset path from the map, since it was already processed
             attrValue = attrValue.replace(relativeAssetPath, jcrAssetMap.get(key));
+            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
+          } else if (attrValue.includes(normalizedRelativeAssetPath)) {
+            // getRelativeAssetPath returns a relative path starting with './' for all
+            // assets in same dir, so we need to consider both
+            // 1. the relative asset path - `./foo.png` (previous condition)
+            // 2. normalized relative asset path - `foo.png` (this condition)
+            attrValue = attrValue.replace(normalizedRelativeAssetPath, jcrAssetMap.get(key));
             node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
           } else if (attrValue.includes(assetPathName)) { // check absolute asset path
             attrValue = attrValue.replace(assetPathName, jcrAssetMap.get(key));
