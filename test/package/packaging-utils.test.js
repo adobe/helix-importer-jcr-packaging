@@ -162,44 +162,6 @@ describe('packaging-utils', () => {
     expect(text[0].getAttribute('text')).to.equal('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>');
   });
 
-  it('should update all asset references in the DOM tree', () => {
-    const document = getParsedXml(`<?xml version="1.0" encoding="UTF-8"?>
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
-  <jcr:content>
-    <root>
-      <section>
-        <block_0>
-          <item_0 image="./c.png"></item_0>
-        </block_0>
-        <block_1>
-          <item_0 image="./c.png"></item_0>
-        </block_1>
-      </section>
-    </root>
-  </jcr:content>
-</jcr:root>
-    `);
-    const pageUrl = 'http://example.com/folderXYZ/page.html';
-    const assetFolderName = 'xwalk';
-    const jcrAssetMap = new Map([
-      ['./c.png', '/content/dam/xwalk/folderXYZ/c.png'],
-    ]);
-
-    traverseAndUpdateAssetReferences(
-      document.documentElement,
-      pageUrl,
-      assetFolderName,
-      jcrAssetMap,
-    );
-
-    const blocks0 = document.getElementsByTagName('block_0');
-    const blocks1 = document.getElementsByTagName('block_1');
-
-    // for each block test to see if the attribute has been updated
-    expect(blocks0[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
-    expect(blocks1[0].getElementsByTagName('item_0')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/c.png');
-  });
-
   it('test for getSanitizedJcrPath', () => {
     // should replace invalid folder name characters
     let input = '/content/dam/inva*lid/fol:der/image.jpg';
@@ -292,8 +254,10 @@ describe('packaging-utils', () => {
     <jcr:content>
       <root>
         <block1 image="/content/themes/img.jpg"/>
+        
         <!-- Same image but within HTML content -->
         <block2 text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"/>
+        
       </root>
     </jcr:content>
   </jcr:root>
@@ -304,7 +268,8 @@ describe('packaging-utils', () => {
 
     // Simulate the scenario where the first occurrence updated the key to absolute URL
     const jcrAssetMap = new Map([
-      ['/content/themes/img.jpg', '/content/dam/adobe/content/themes/img.jpg'],
+      ['/content/themes/img.jpg',
+        '/content/dam/adobe/content/themes/img.jpg'],
     ]);
 
     traverseAndUpdateAssetReferences(

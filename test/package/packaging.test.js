@@ -13,7 +13,7 @@
 import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
 import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
-import { getEmptyPageTemplate, getParsedXml } from '../../src/package/packaging.utils.js';
+import { getEmptyPageTemplate, getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
 const ASSET_FOLDER_NAME = 'plush';
@@ -22,6 +22,13 @@ const IMAGE_MAPPING_PATH = '../fixtures/plush-image-mapping.json';
 const PROCESS_XML_PATH = '../fixtures/plush-processed.xml';
 
 const loadFile = async (file) => readFile(new URL(file, import.meta.url), 'utf-8');
+
+// Helper function to initialize image URL mapping from test data
+const getImageUrlMap = async () => loadFile(IMAGE_MAPPING_PATH)
+  .then((response) => JSON.parse(response))
+  .then((data) => new Map(Object.entries(data)))
+  // eslint-disable-next-line no-console
+  .catch((error) => console.error('Error loading JSON:', error));
 
 // Helper function to initialize an array of image URL keys from test data
 const getImageUrlKeysArray = async () => loadFile(IMAGE_MAPPING_PATH)
@@ -66,6 +73,31 @@ describe('packaging', () => {
       actualXmlDom.documentElement.outerHTML,
       'Processed XML does not match expected XML',
     ).to.deep.equal(expectedXmlDom.documentElement.outerHTML);
+  });
+
+  // compare the generated image mapping with the expected image mapping
+  it('verify generated image mapping', async () => {
+    const originalXml = await loadFile(ORIGINAL_XML_PATH);
+    const expectedImageUrlMapping = await getImageUrlMap();
+    // Init image URL map (original urls only, jcr paths will be added by updateAssetReferences)
+    const imageUrls = await getImageUrlKeysArray();
+    const actualImageUrlMapping = new Map(imageUrls.map((url) => [url, '']));
+
+    await updateAssetReferences(originalXml, PAGE_URL, ASSET_FOLDER_NAME, actualImageUrlMapping);
+
+    // Compare the two maps
+    expect(
+      actualImageUrlMapping.size,
+      'Image mapping sizes do not match',
+    ).to.equal(expectedImageUrlMapping.size);
+
+    // Array.from(map.entries()).forEach(), which avoids ESLint's no-restricted-syntax rule.
+    Array.from(expectedImageUrlMapping.entries()).forEach(([key, expectedValue]) => {
+      // the original image urls may be relative, so we need to get the full url for comparison
+      const actualValue = actualImageUrlMapping.get(getFullAssetUrl(key, PAGE_URL));
+      expect(actualValue, `Mismatch for key: ${key}, expected: ${expectedValue}, got: ${actualValue}`)
+        .to.equal(expectedValue);
+    });
   });
 
   it('should handle XML parsing errors in updateAssetReferences', async () => {
