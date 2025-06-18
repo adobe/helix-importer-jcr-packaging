@@ -15,6 +15,7 @@ import he from 'he';
 import {
   getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
   getPropertiesXml, traverseAndUpdateAssetReferences, getSanitizedJcrPath,
+  getRelativeAssetPath,
 } from '../../src/package/packaging.utils.js';
 
 describe('packaging-utils', () => {
@@ -162,6 +163,114 @@ describe('packaging-utils', () => {
     expect(text[0].getAttribute('text')).to.equal('<p><img src="/content/dam/xwalk/car.jpeg"></p><p><img src="/content/dam/xwalk/boat.jpeg"></p>');
   });
 
+  it('should update all relative asset references in the DOM tree', () => {
+    const document = getParsedXml(`
+      <section>
+        <block_0>
+          <item image="./cat.png"></item>
+        </block_0>
+        <block_1>
+          <item image="./cat.png"></item>
+        </block_1>
+        <block_2>
+          <item image="../dog.png"></item>
+        </block_2>
+        <block_3>
+          <item image="../dog.png"></item>
+        </block_3>        
+        <block_4>
+          <item image="asset/bird.png"></item>
+        </block_4>
+        <block_5>
+          <item image="asset/bird.png"></item>
+        </block_5>        
+        <block_6>
+          <item image="asset.png"></item>
+        </block_6>
+        <block_7>
+          <item image="asset.png"></item>
+        </block_7> 
+      </section>
+    `);
+    const pageUrl = 'http://example.com/folderXYZ/page.html';
+    const assetFolderName = 'xwalk';
+    const jcrAssetMap = new Map([
+      ['./cat.png', '/content/dam/xwalk/folderxyz/cat.png'],
+      ['../dog.png', '/content/dam/xwalk/dog.png'],
+      ['asset/bird.png', '/content/dam/xwalk/folderxyz/asset/bird.png'],
+      ['asset.png', '/content/dam/xwalk/folderxyz/asset.png'],
+    ]);
+
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
+
+    const blocks0 = document.getElementsByTagName('block_0');
+    const blocks1 = document.getElementsByTagName('block_1');
+    const blocks2 = document.getElementsByTagName('block_2');
+    const blocks3 = document.getElementsByTagName('block_3');
+    const blocks4 = document.getElementsByTagName('block_4');
+    const blocks5 = document.getElementsByTagName('block_5');
+    const blocks6 = document.getElementsByTagName('block_6');
+    const blocks7 = document.getElementsByTagName('block_7');
+
+    // for each block test to see if the attribute has been updated
+    expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/cat.png'); // Same directory
+    expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/cat.png'); // Same directory
+    expect(blocks2[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/dog.png'); // Parent directory
+    expect(blocks3[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/dog.png'); // Parent directory
+    expect(blocks4[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/asset/bird.png'); // sub asset folder
+    expect(blocks5[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/asset/bird.png'); // sub asset folder
+    expect(blocks6[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/asset.png'); // sub asset folder
+    expect(blocks7[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/folderxyz/asset.png'); // sub asset folder
+  });
+
+  it('should update all asset references in the DOM tree', () => {
+    const document = getParsedXml(`
+      <section>
+        <block_0>
+          <item image="/-/media/projects/foo/cat.png"></item>
+        </block_0>
+        <block_1>
+          <item image="/-/media/projects/foo/cat.png"></item>
+        </block_1>
+        <block_2>
+          <item image="/content/themes/img.jpg"></item> 
+        </block_2>
+        <block_3>
+         <item text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"></item>
+        </block_3>
+      </section>
+    `);
+    const pageUrl = 'http://example.com/foobar/page.html';
+    const assetFolderName = 'xwalk';
+    const jcrAssetMap = new Map([
+      ['/-/media/projects/foo/cat.png', ''],
+      ['/content/themes/img.jpg', ''],
+    ]);
+
+    traverseAndUpdateAssetReferences(
+      document.documentElement,
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+    );
+
+    const blocks0 = document.getElementsByTagName('block_0');
+    const blocks1 = document.getElementsByTagName('block_1');
+    const blocks2 = document.getElementsByTagName('block_2');
+    const blocks3 = document.getElementsByTagName('block_3');
+
+    // for each block test to see if the attribute has been updated
+    expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/-/media/projects/foo/cat.png');
+    expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/-/media/projects/foo/cat.png');
+    expect(blocks2[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/content/themes/img.jpg');
+    expect(blocks3[0].getElementsByTagName('item')[0].getAttribute('text')).to.equal('<img src="/content/dam/xwalk/content/themes/img.jpg">');
+  });
+
   it('test for getSanitizedJcrPath', () => {
     // should replace invalid folder name characters
     let input = '/content/dam/inva*lid/fol:der/image.jpg';
@@ -248,47 +357,49 @@ describe('packaging-utils', () => {
     );
   });
 
-  it('should handle multiple references to same asset', () => {
-    const document = getParsedXml(`<?xml version="1.0" encoding="UTF-8"?>
-  <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
-    <jcr:content>
-      <root>
-        <block1 image="/content/themes/img.jpg"/>
-        
-        <!-- Same image but within HTML content -->
-        <block2 text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"/>
-        
-      </root>
-    </jcr:content>
-  </jcr:root>
-    `);
+  describe('getRelativeAssetPath', () => {
+    const pageUrl = 'https://foo.com/foo/folderXYZ/page.html';
 
-    const pageUrl = 'https://www.adobe.com.au/page.html';
-    const assetFolderName = 'adobe';
+    it('should handle files in the same directory', () => {
+      // Test file in the same directory
+      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/cat.png'))
+        .to.equal('./cat.png');
 
-    // Simulate the scenario where the first occurrence updated the key to absolute URL
-    const jcrAssetMap = new Map([
-      ['/content/themes/img.jpg',
-        '/content/dam/adobe/content/themes/img.jpg'],
-    ]);
+      // Test another file in the same directory
+      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/image.jpg'))
+        .to.equal('./image.jpg');
+    });
 
-    traverseAndUpdateAssetReferences(
-      document.documentElement,
-      pageUrl,
-      assetFolderName,
-      jcrAssetMap,
-    );
+    it('should handle files in subdirectories', () => {
+      // Test file in a subdirectory
+      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/asset/bird.png'))
+        .to.equal('./asset/bird.png');
 
-    // Test relative path reference
-    const block1 = document.getElementsByTagName('block1')[0];
-    expect(block1.getAttribute('image')).to.equal(
-      '/content/dam/adobe/content/themes/img.jpg',
-    );
+      // Test file in a deeper subdirectory
+      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/images/sub/photo.jpg'))
+        .to.equal('./images/sub/photo.jpg');
+    });
 
-    // Test relative path in HTML content
-    const block2 = document.getElementsByTagName('block2')[0];
-    expect(block2.getAttribute('text')).to.equal(
-      '<img src="/content/dam/adobe/content/themes/img.jpg">',
-    );
+    it('should handle files in parent directories', () => {
+      // Test file in parent directory
+      expect(getRelativeAssetPath(pageUrl, '/foo/dog.png'))
+        .to.equal('../dog.png');
+
+      // Test file in parent's parent directory
+      expect(getRelativeAssetPath(pageUrl, '/cat.png'))
+        .to.equal('../../cat.png');
+    });
+
+    it('should handle different page URL formats', () => {
+      // Test with trailing slash in page URL
+      const pageUrlWithSlash = 'https://foo.com/content/dam/xwalk/folderXYZ/';
+      expect(getRelativeAssetPath(pageUrlWithSlash, '/content/dam/xwalk/folderXYZ/cat.png'))
+        .to.equal('./cat.png');
+
+      // Test with different domain
+      const pageUrlDifferentDomain = 'http://example.com/content/dam/xwalk/folderXYZ/page.html';
+      expect(getRelativeAssetPath(pageUrlDifferentDomain, '/content/dam/xwalk/folderXYZ/cat.png'))
+        .to.equal('./cat.png');
+    });
   });
 });

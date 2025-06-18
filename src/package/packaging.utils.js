@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import he from 'he';
+import path from 'path-browserify';
 import { DOMParser } from '@xmldom/xmldom';
 import { formatXML } from '../shared/xml.js';
 
@@ -194,21 +195,21 @@ export const getJcrPagePath = (pagePath, sitePath) => {
  * @returns {string} the JCR path for the asset.
  */
 export const getJcrAssetPath = (assetUrl, assetFolderName) => {
-  let path = assetUrl.pathname;
+  let assetPath = assetUrl.pathname;
   let jcrAssetPath;
   // Extract file extension (only the last part)
-  const lastDotIndex = path.lastIndexOf('.');
+  const lastDotIndex = assetPath.lastIndexOf('.');
   let extension = '';
 
   // if there is a valid extension, remove it from the path
-  if (lastDotIndex !== -1 && lastDotIndex > path.lastIndexOf('/')) {
-    extension = path.substring(lastDotIndex);
+  if (lastDotIndex !== -1 && lastDotIndex > assetPath.lastIndexOf('/')) {
+    extension = assetPath.substring(lastDotIndex);
     // Remove only the last extension from path
-    path = path.substring(0, lastDotIndex);
+    assetPath = assetPath.substring(0, lastDotIndex);
   }
 
-  if (path.startsWith('/content/dam/')) {
-    const tokens = path.split('/');
+  if (assetPath.startsWith('/content/dam/')) {
+    const tokens = assetPath.split('/');
     const assetFolderTokens = assetFolderName.split('/');
 
     // Find and remove existing occurrence of assetFolderName
@@ -226,8 +227,8 @@ export const getJcrAssetPath = (assetUrl, assetFolderName) => {
     jcrAssetPath = `${tokens.join('/')}${extension}`;
   } else {
     // replace media_ with media1_ in path to avoid conflicts with the media folder
-    path = path.replace('/media_', '/media1_');
-    jcrAssetPath = `/content/dam/${assetFolderName}${path}${extension}`;
+    assetPath = assetPath.replace('/media_', '/media1_');
+    jcrAssetPath = `/content/dam/${assetFolderName}${assetPath}${extension}`;
   }
   return getSanitizedJcrPath(jcrAssetPath).toLowerCase();
 };
@@ -257,11 +258,15 @@ const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
     // absolute fileReference
     url = new URL(`${host}${assetReference}`);
     jcrPath = getJcrAssetPath(url, assetFolderName);
-  } else if (assetReference.startsWith('./')) {
+  } else if (assetReference.startsWith('./') || assetReference.startsWith('../')) {
     // relative fileReference: use the page path to make it an absolute path
     const parentPath = pagePath.substring(0, pagePath.lastIndexOf('/'));
-    // eslint-disable-next-line no-param-reassign
-    url = new URL(`${host}${parentPath}${assetReference.substring(1)}`);
+    url = new URL(assetReference, `${host}${parentPath}/`);
+    jcrPath = getJcrAssetPath(url, assetFolderName);
+  } else {
+    // Handle subdirectory or filename relative to the page's directory, e.g. 'asset/foo.png'
+    const parentPath = pagePath.substring(0, pagePath.lastIndexOf('/'));
+    url = new URL(`./${assetReference}`, `${host}${parentPath}/`);
     jcrPath = getJcrAssetPath(url, assetFolderName);
   }
   return jcrPath;
@@ -276,21 +281,60 @@ const getJcrAssetRef = (assetReference, pageUrl, assetFolderName) => {
  */
 export function getFullAssetUrl(assetReference, pageUrl) {
   if (!assetReference) return null;
-
-  // Already a full URL, return as is
-  if (assetReference.startsWith('http://') || assetReference.startsWith('https://')) {
-    return assetReference;
-  }
-
   const pageUrlObj = new URL(pageUrl); // Parse only once
 
-  // If the asset reference starts with './', it is a relative file path
-  if (assetReference.startsWith('./')) {
+  // Case 1: Already a fully qualified URL
+  if (assetReference.startsWith('http://') || assetReference.startsWith('https://')) {
+    // if it is a localhost url, replace it with the origin from the pageUrlObj
+    if (assetReference.startsWith('http://localhost:')) {
+      return `${pageUrlObj.origin}${assetReference.pathname}`;
+    }
+    return assetReference; // return as is
+  }
+
+  // Case 2: If the asset reference starts with './' OR '../', it is a page relative file path
+  if (assetReference.startsWith('./') || assetReference.startsWith('../')) {
     return new URL(assetReference, pageUrlObj.href).href;
   }
 
-  // Absolute asset reference, appending the asset path to the host
-  return `${pageUrlObj.origin}${assetReference}`;
+  // Case 3: Absolute asset reference (root relative), appending the asset path to the host
+  if (assetReference.startsWith('/')) {
+    return `${pageUrlObj.origin}${assetReference}`;
+  }
+
+  // Case 4: Subdirectory or filename relative to the page's directory, e.g. 'asset/foo.png'
+  // Get the directory of the page
+  const pagePath = pageUrlObj.pathname;
+  const pageDir = pagePath.endsWith('/') ? pagePath : pagePath.substring(0, pagePath.lastIndexOf('/') + 1);
+  return new URL(`./${assetReference}`, `${pageUrlObj.origin}${pageDir}`).href;
+}
+
+/**
+ * Get the relative asset path from the page URL and the asset key.
+ * Say for example the page url is https://foo.com/content/dam/xwalk/folderXYZ/page.html
+ * - For assetPathName = /folderXYZ/cat.png (same dir as page), return ./cat.png
+ * - For assetPathName = /folderXYZ/asset/bird.png (subdir of page), return asset/bird.png
+ * - For assetPathName = /dog.png (parent dir of page), return ../dog.png
+ * @param {string} pageUrl - The URL of the page
+ * @param {string} assetPathName - The key of the asset
+ * @returns {string} the relative asset path
+ */
+export function getRelativeAssetPath(pageUrl, assetPathName) {
+  const pagePath = new URL(pageUrl).pathname;
+  const assetPath = new URL(assetPathName, pageUrl).pathname;
+
+  // Get the directory of the current page
+  const pageDir = pagePath.endsWith('/') ? pagePath : path.dirname(pagePath);
+
+  // Get the relative path using path.relative
+  let relPath = path.relative(pageDir, assetPath);
+
+  // For same-directory files, prepend './'
+  if (!relPath.startsWith('.') && !relPath.startsWith('/')) {
+    relPath = `./${relPath}`;
+  }
+
+  return relPath;
 }
 
 /**
@@ -368,10 +412,25 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
           // Provided, the key was not found in the first if condition, and it starts with the
           // site origin, we can assume that the asset has already been processed once.
           const url = new URL(key);
-          const relAssetPath = url.pathname; // get the relative asset path
-          if (attrValue.includes(relAssetPath)) { // check if the relative path is in the attrValue
+          // get the absolute asset path from key
+          const assetPathName = url.pathname;
+          // get the relative asset path (w.r.t. the page)
+          const relativeAssetPath = getRelativeAssetPath(pageUrl, assetPathName);
+          const normalizedRelativeAssetPath = relativeAssetPath.replace(/^\.\//, ''); // remove leading './' if present
+          // check for page relative asset path (same dir or subdir or parent dir)
+          if (attrValue.includes(relativeAssetPath)) {
             // use the jcr asset path from the map, since it was already processed
-            attrValue = attrValue.replace(relAssetPath, jcrAssetMap.get(key));
+            attrValue = attrValue.replace(relativeAssetPath, jcrAssetMap.get(key));
+            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
+          } else if (attrValue.includes(normalizedRelativeAssetPath)) {
+            // getRelativeAssetPath returns a relative path starting with './' for all
+            // assets in same dir, so we need to consider both
+            // 1. the relative asset path - `./foo.png` (previous condition)
+            // 2. normalized relative asset path - `foo.png` (this condition)
+            attrValue = attrValue.replace(normalizedRelativeAssetPath, jcrAssetMap.get(key));
+            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
+          } else if (attrValue.includes(assetPathName)) { // check absolute asset path
+            attrValue = attrValue.replace(assetPathName, jcrAssetMap.get(key));
             node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
           }
         }
