@@ -225,12 +225,19 @@ describe('packaging-utils', () => {
         <block_1>
           <item image="/-/media/projects/foo/cat.png"></item>
         </block_1>
+        <block_2>
+          <item image="/content/themes/img.jpg"></item> 
+        </block_2>
+        <block_3>
+         <item text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"></item>
+        </block_3>
       </section>
     `);
     const pageUrl = 'http://example.com/foobar/page.html';
     const assetFolderName = 'xwalk';
     const jcrAssetMap = new Map([
       ['/-/media/projects/foo/cat.png', ''],
+      ['/content/themes/img.jpg', ''],
     ]);
 
     traverseAndUpdateAssetReferences(
@@ -242,10 +249,14 @@ describe('packaging-utils', () => {
 
     const blocks0 = document.getElementsByTagName('block_0');
     const blocks1 = document.getElementsByTagName('block_1');
+    const blocks2 = document.getElementsByTagName('block_2');
+    const blocks3 = document.getElementsByTagName('block_3');
 
     // for each block test to see if the attribute has been updated
     expect(blocks0[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/-/media/projects/foo/cat.png');
     expect(blocks1[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/-/media/projects/foo/cat.png');
+    expect(blocks2[0].getElementsByTagName('item')[0].getAttribute('image')).to.equal('/content/dam/xwalk/content/themes/img.jpg');
+    expect(blocks3[0].getElementsByTagName('item')[0].getAttribute('text')).to.equal('<img src="/content/dam/xwalk/content/themes/img.jpg">');
   });
 
   it('test for getSanitizedJcrPath', () => {
@@ -331,50 +342,6 @@ describe('packaging-utils', () => {
     );
     expect(block2.getAttribute('data')).to.equal(
       he.encode('Link to "/content/dam/test-site/images/double-quoted.png"'),
-    );
-  });
-
-  it('should handle multiple references to same asset', () => {
-    const document = getParsedXml(`<?xml version="1.0" encoding="UTF-8"?>
-  <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0">
-    <jcr:content>
-      <root>
-        <block1 image="/content/themes/img.jpg"/>
-        
-        <!-- Same image but within HTML content -->
-        <block2 text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"/>
-        
-      </root>
-    </jcr:content>
-  </jcr:root>
-    `);
-
-    const pageUrl = 'https://www.adobe.com.au/page.html';
-    const assetFolderName = 'adobe';
-
-    // Simulate the scenario where the first occurrence updated the key to absolute URL
-    const jcrAssetMap = new Map([
-      ['/content/themes/img.jpg',
-        '/content/dam/adobe/content/themes/img.jpg'],
-    ]);
-
-    traverseAndUpdateAssetReferences(
-      document.documentElement,
-      pageUrl,
-      assetFolderName,
-      jcrAssetMap,
-    );
-
-    // Test relative path reference
-    const block1 = document.getElementsByTagName('block1')[0];
-    expect(block1.getAttribute('image')).to.equal(
-      '/content/dam/adobe/content/themes/img.jpg',
-    );
-
-    // Test relative path in HTML content
-    const block2 = document.getElementsByTagName('block2')[0];
-    expect(block2.getAttribute('text')).to.equal(
-      '<img src="/content/dam/adobe/content/themes/img.jpg">',
     );
   });
 });
