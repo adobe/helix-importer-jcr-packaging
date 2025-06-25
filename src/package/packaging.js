@@ -33,9 +33,7 @@ const init = () => {
 };
 
 const addPage = async (page, dir, prefix, zip) => {
-  // Skip XML formatting for JCR content files to preserve namespace prefixes
-  // AEM is sensitive to namespace prefix changes and may reject packages with modified prefixes
-  const xml = page.contentXmlPath.endsWith('.content.xml') ? page.processedXml : formatXML(page.processedXml);
+  const xml = formatXML(page.processedXml);
   zip.file(page.contentXmlPath, xml);
   await saveFile(dir, `${prefix}/${page.contentXmlPath}`, xml);
 };
