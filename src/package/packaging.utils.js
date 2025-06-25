@@ -287,7 +287,7 @@ export function getFullAssetUrl(assetReference, pageUrl) {
   if (assetReference.startsWith('http://') || assetReference.startsWith('https://')) {
     // if it is a localhost url, replace it with the origin from the pageUrlObj
     if (assetReference.startsWith('http://localhost:')) {
-      return `${pageUrlObj.origin}${assetReference.pathname}`;
+      return `${pageUrlObj.origin}${new URL(assetReference).pathname}`;
     }
     return assetReference; // return as is
   }
@@ -422,15 +422,15 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
             // use the jcr asset path from the map, since it was already processed
             attrValue = attrValue.replace(relativeAssetPath, jcrAssetMap.get(key));
             node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
+          } else if (attrValue.includes(assetPathName)) { // check absolute asset path
+            attrValue = attrValue.replace(assetPathName, jcrAssetMap.get(key));
+            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
           } else if (attrValue.includes(normalizedRelativeAssetPath)) {
             // getRelativeAssetPath returns a relative path starting with './' for all
             // assets in same dir, so we need to consider both
-            // 1. the relative asset path - `./foo.png` (previous condition)
+            // 1. the relative asset path - `./foo.png` (first condition)
             // 2. normalized relative asset path - `foo.png` (this condition)
             attrValue = attrValue.replace(normalizedRelativeAssetPath, jcrAssetMap.get(key));
-            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
-          } else if (attrValue.includes(assetPathName)) { // check absolute asset path
-            attrValue = attrValue.replace(assetPathName, jcrAssetMap.get(key));
             node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
           }
         }
