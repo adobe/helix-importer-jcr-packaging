@@ -404,6 +404,7 @@ export const traverseAndUpdateAssetReferences = (
       const keys = [...jcrAssetMap.keys()];
       keys.forEach((key) => {
         if (attrValue.includes(key)) {
+          // get the JCR asset path from jcrAssetMap if it exists, else compute it
           const jcrAssetPath = jcrAssetMap.get(key)
             || getJcrAssetRef(key, pageUrl, assetFolderName);
           // update the asset maps with the jcr asset path and the fully qualified url

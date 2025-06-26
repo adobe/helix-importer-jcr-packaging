@@ -242,10 +242,10 @@ describe('packaging-utils', () => {
           <item image="/-/media/projects/foo/cat.png"></item>
         </block_1>
         <block_2>
-          <item image="/content/themes/img.jpg"></item>
+          <item image="http://localhost:3001/content/themes/img.jpg"></item>
         </block_2>
         <block_3>
-         <item text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"></item>
+         <item text="&lt;img src=&quot;http://localhost:3001/content/themes/img.jpg&quot;&gt;"></item>
         </block_3>
       </section>
     `);
@@ -253,7 +253,7 @@ describe('packaging-utils', () => {
     const assetFolderName = 'xwalk';
     const assetKeys = [
       '/-/media/projects/foo/cat.png',
-      '/content/themes/img.jpg',
+      'http://localhost:3001/content/themes/img.jpg',
     ];
     const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(assetKeys);
 
