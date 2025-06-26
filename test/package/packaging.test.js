@@ -12,8 +12,16 @@
 /* eslint-env mocha */
 import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
-import { createJcrPackage, updateAssetReferences } from '../../src/package/packaging.js';
-import { getEmptyPageTemplate, getFullAssetUrl, getParsedXml } from '../../src/package/packaging.utils.js';
+import {
+  createJcrPackage,
+  updateAssetReferences,
+} from '../../src/package/packaging.js';
+import {
+  getEmptyPageTemplate,
+  getFullAssetUrl,
+  getParsedXml,
+  createEmptyAssetMaps,
+} from '../../src/package/packaging.utils.js';
 
 const PAGE_URL = 'https://main--stini--bhellema.hlx.page';
 const ASSET_FOLDER_NAME = 'plush';
@@ -62,6 +70,7 @@ describe('packaging', () => {
       PAGE_URL,
       ASSET_FOLDER_NAME,
       actualImageUrlMapping,
+      new Map(imageUrls.map((url) => [url, ''])),
     );
 
     // Parse both XMLs using jsdom
@@ -81,10 +90,25 @@ describe('packaging', () => {
     const expectedImageUrlMapping = await getImageUrlMap();
     // Init image URL map (original urls only, jcr paths will be added by updateAssetReferences)
     const imageUrls = await getImageUrlKeysArray();
-    const actualImageUrlMapping = new Map(imageUrls.map((url) => [url, '']));
+    const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(imageUrls);
 
-    await updateAssetReferences(originalXml, PAGE_URL, ASSET_FOLDER_NAME, actualImageUrlMapping);
+    await updateAssetReferences(
+      originalXml,
+      PAGE_URL,
+      ASSET_FOLDER_NAME,
+      jcrAssetMap,
+      absoluteAssetUrlMap,
+    );
 
+    // Combine the two maps into a single object using values from absoluteAssetUrlMap as key
+    // and values from jcrAssetMap as value
+    const actualImageUrlMapping = new Map();
+    Array.from(absoluteAssetUrlMap.entries()).forEach(([key, absoluteUrl]) => {
+      const jcrPath = jcrAssetMap.get(key);
+      if (absoluteUrl && jcrPath) {
+        actualImageUrlMapping.set(absoluteUrl, jcrPath);
+      }
+    });
     // Compare the two maps
     expect(
       actualImageUrlMapping.size,

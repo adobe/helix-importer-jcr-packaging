@@ -15,7 +15,7 @@ import he from 'he';
 import {
   getFilterXml, getJcrPagePath, getPackageName, getParsedXml, getJcrAssetPath,
   getPropertiesXml, traverseAndUpdateAssetReferences, getSanitizedJcrPath,
-  getRelativeAssetPath,
+  createEmptyAssetMaps,
 } from '../../src/package/packaging.utils.js';
 
 describe('packaging-utils', () => {
@@ -131,21 +131,23 @@ describe('packaging-utils', () => {
     `);
     const pageUrl = 'http://example.com/folderXYZ/page.html';
     const assetFolderName = 'xwalk';
-    const jcrAssetMap = new Map([
-      ['https://domain.com/media_a.jpeg', '/content/dam/xwalk/media_a.jpeg'],
-      ['/media_b.jpeg', '/content/dam/xwalk/media1_b.jpeg'],
-      ['/car.jpeg?width=750&format=jpeg&optimize=medium', '/content/dam/xwalk/car.jpeg'],
-      ['/boat.jpeg?width=750&format=jpeg&optimize=medium', '/content/dam/xwalk/boat.jpeg'],
-      ['./c.png', '/content/dam/xwalk/folderXYZ/c.png'],
-      ['./folder/d.png', '/content/dam/xwalk/folderXYZ/folder/d.png'],
-      ['/content/dam/folder/e.png', '/content/dam/xwalk/folder/e.png'],
-    ]);
+    const assetKeys = [
+      'https://domain.com/media_a.jpeg',
+      '/media_b.jpeg',
+      '/car.jpeg?width=750&format=jpeg&optimize=medium',
+      '/boat.jpeg?width=750&format=jpeg&optimize=medium',
+      './c.png',
+      './folder/d.png',
+      '/content/dam/folder/e.png',
+    ];
+    const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(assetKeys);
 
     traverseAndUpdateAssetReferences(
       document.documentElement,
       pageUrl,
       assetFolderName,
       jcrAssetMap,
+      absoluteAssetUrlMap,
     );
 
     const blocks = document.getElementsByTagName('block');
@@ -177,35 +179,37 @@ describe('packaging-utils', () => {
         </block_2>
         <block_3>
           <item image="../dog.png"></item>
-        </block_3>        
+        </block_3>
         <block_4>
           <item image="asset/bird.png"></item>
         </block_4>
         <block_5>
           <item image="asset/bird.png"></item>
-        </block_5>        
+        </block_5>
         <block_6>
           <item image="asset.png"></item>
         </block_6>
         <block_7>
           <item image="asset.png"></item>
-        </block_7> 
+        </block_7>
       </section>
     `);
     const pageUrl = 'http://example.com/folderXYZ/page.html';
     const assetFolderName = 'xwalk';
-    const jcrAssetMap = new Map([
-      ['./cat.png', '/content/dam/xwalk/folderxyz/cat.png'],
-      ['../dog.png', '/content/dam/xwalk/dog.png'],
-      ['asset/bird.png', '/content/dam/xwalk/folderxyz/asset/bird.png'],
-      ['asset.png', '/content/dam/xwalk/folderxyz/asset.png'],
-    ]);
+    const assetKeys = [
+      './cat.png',
+      '../dog.png',
+      'asset/bird.png',
+      'asset.png',
+    ];
+    const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(assetKeys);
 
     traverseAndUpdateAssetReferences(
       document.documentElement,
       pageUrl,
       assetFolderName,
       jcrAssetMap,
+      absoluteAssetUrlMap,
     );
 
     const blocks0 = document.getElementsByTagName('block_0');
@@ -238,7 +242,7 @@ describe('packaging-utils', () => {
           <item image="/-/media/projects/foo/cat.png"></item>
         </block_1>
         <block_2>
-          <item image="/content/themes/img.jpg"></item> 
+          <item image="/content/themes/img.jpg"></item>
         </block_2>
         <block_3>
          <item text="&lt;img src=&quot;/content/themes/img.jpg&quot;&gt;"></item>
@@ -247,16 +251,18 @@ describe('packaging-utils', () => {
     `);
     const pageUrl = 'http://example.com/foobar/page.html';
     const assetFolderName = 'xwalk';
-    const jcrAssetMap = new Map([
-      ['/-/media/projects/foo/cat.png', ''],
-      ['/content/themes/img.jpg', ''],
-    ]);
+    const assetKeys = [
+      '/-/media/projects/foo/cat.png',
+      '/content/themes/img.jpg',
+    ];
+    const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(assetKeys);
 
     traverseAndUpdateAssetReferences(
       document.documentElement,
       pageUrl,
       assetFolderName,
       jcrAssetMap,
+      absoluteAssetUrlMap,
     );
 
     const blocks0 = document.getElementsByTagName('block_0');
@@ -328,18 +334,20 @@ describe('packaging-utils', () => {
 
     const pageUrl = 'http://example.com/test/page.html';
     const assetFolderName = 'test-site';
-    const jcrAssetMap = new Map([
-      ['/images/simple.jpg', '/content/dam/test-site/images/simple.jpg'],
-      ['/images/background.png', '/content/dam/test-site/images/background.png'],
-      ['/images/double-encoded.jpg', '/content/dam/test-site/images/double-encoded.jpg'],
-      ['/images/double-quoted.png', '/content/dam/test-site/images/double-quoted.png'],
-    ]);
+    const assetKeys = [
+      '/images/simple.jpg',
+      '/images/background.png',
+      '/images/double-encoded.jpg',
+      '/images/double-quoted.png',
+    ];
+    const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(assetKeys);
 
     traverseAndUpdateAssetReferences(
       document.documentElement,
       pageUrl,
       assetFolderName,
       jcrAssetMap,
+      absoluteAssetUrlMap,
     );
 
     // Test non-encoded attributes (should remain non-encoded)
@@ -355,51 +363,5 @@ describe('packaging-utils', () => {
     expect(block2.getAttribute('data')).to.equal(
       he.encode('Link to "/content/dam/test-site/images/double-quoted.png"'),
     );
-  });
-
-  describe('getRelativeAssetPath', () => {
-    const pageUrl = 'https://foo.com/foo/folderXYZ/page.html';
-
-    it('should handle files in the same directory', () => {
-      // Test file in the same directory
-      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/cat.png'))
-        .to.equal('./cat.png');
-
-      // Test another file in the same directory
-      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/image.jpg'))
-        .to.equal('./image.jpg');
-    });
-
-    it('should handle files in subdirectories', () => {
-      // Test file in a subdirectory
-      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/asset/bird.png'))
-        .to.equal('./asset/bird.png');
-
-      // Test file in a deeper subdirectory
-      expect(getRelativeAssetPath(pageUrl, '/foo/folderXYZ/images/sub/photo.jpg'))
-        .to.equal('./images/sub/photo.jpg');
-    });
-
-    it('should handle files in parent directories', () => {
-      // Test file in parent directory
-      expect(getRelativeAssetPath(pageUrl, '/foo/dog.png'))
-        .to.equal('../dog.png');
-
-      // Test file in parent's parent directory
-      expect(getRelativeAssetPath(pageUrl, '/cat.png'))
-        .to.equal('../../cat.png');
-    });
-
-    it('should handle different page URL formats', () => {
-      // Test with trailing slash in page URL
-      const pageUrlWithSlash = 'https://foo.com/content/dam/xwalk/folderXYZ/';
-      expect(getRelativeAssetPath(pageUrlWithSlash, '/content/dam/xwalk/folderXYZ/cat.png'))
-        .to.equal('./cat.png');
-
-      // Test with different domain
-      const pageUrlDifferentDomain = 'http://example.com/content/dam/xwalk/folderXYZ/page.html';
-      expect(getRelativeAssetPath(pageUrlDifferentDomain, '/content/dam/xwalk/folderXYZ/cat.png'))
-        .to.equal('./cat.png');
-    });
   });
 });

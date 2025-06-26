@@ -61,8 +61,7 @@ const findAssetsInMarkdown = (markdownContent) => {
       url = references[match[5]] || null; // Resolve URL from reference map
     }
     if (url) {
-      const urlObj = new URL(url);
-      assetUrls.push(urlObj.origin + urlObj.pathname);
+      assetUrls.push(url);
     }
   }
 
