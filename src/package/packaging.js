@@ -21,6 +21,7 @@ import {
   getJcrPagePath,
   traverseAndUpdateAssetReferences,
   getEmptyPageTemplate,
+  createEmptyAssetMaps,
 } from './packaging.utils.js';
 import { saveFile } from '../shared/filesystem.js';
 import { formatXML } from '../shared/xml.js';
@@ -43,10 +44,17 @@ const addPage = async (page, dir, prefix, zip) => {
  * @param {string} xml - The xml content of the page
  * @param {string} pageUrl - The url of the site page
  * @param {string} assetFolderPath - The path under /content/dam where the assets are stored.
- * @param {Map} assetMappings - A map to store the asset urls and their corresponding jcr paths
+ * @param {Map} jcrAssetMap - A map to store the asset urls and corresponding jcr paths
+ * @param {Map} absoluteAssetUrlMap - A map to store the asset urls and corresponding absolute urls
  * @returns {Promise<*|string>} - The updated xml content
  */
-export const updateAssetReferences = async (xml, pageUrl, assetFolderPath, assetMappings) => {
+export const updateAssetReferences = async (
+  xml,
+  pageUrl,
+  assetFolderPath,
+  jcrAssetMap,
+  absoluteAssetUrlMap,
+) => {
   let doc;
   try {
     doc = getParsedXml(xml);
@@ -57,14 +65,26 @@ export const updateAssetReferences = async (xml, pageUrl, assetFolderPath, asset
   }
 
   // Start traversal from the document root and update the asset references
-  traverseAndUpdateAssetReferences(doc.documentElement, pageUrl, assetFolderPath, assetMappings);
+  traverseAndUpdateAssetReferences(
+    doc.documentElement,
+    pageUrl,
+    assetFolderPath,
+    jcrAssetMap,
+    absoluteAssetUrlMap,
+  );
 
   const serializer = new XMLSerializer();
   return serializer.serializeToString(doc);
 };
 
 // eslint-disable-next-line max-len
-export const getJcrPages = async (pages, siteFolderName, assetFolderPath, assetMappings) => Promise.all(pages.map(async (page) => ({
+export const getJcrPages = async (
+  pages,
+  siteFolderName,
+  assetFolderPath,
+  jcrAssetMap,
+  absoluteAssetUrlMap,
+) => Promise.all(pages.map(async (page) => ({
   path: page.path,
   sourceXml: page.data,
   pageProperties: getPageProperties(page.data),
@@ -73,7 +93,8 @@ export const getJcrPages = async (pages, siteFolderName, assetFolderPath, assetM
     page.data,
     page.url,
     assetFolderPath,
-    assetMappings,
+    jcrAssetMap,
+    absoluteAssetUrlMap,
   ),
   jcrPath: getJcrPagePath(page.path, siteFolderName),
   contentXmlPath: `jcr_root${getJcrPagePath(page.path, siteFolderName)}/.content.xml`,
@@ -123,13 +144,21 @@ const getEmptyAncestorPages = (pages) => {
 };
 
 /**
- * Save the asset mappings to a file.
- * @param {Map} assetMappings - A map of asset urls and their corresponding jcr paths
+ * Save the asset mappings (absolute url -> jcr path) to a file.
+ * @param {Map} jcrAssetMap - A map of asset urls and their corresponding jcr paths
+ * @param {Map} absoluteAssetUrlMap - A map of asset urls and their corresponding absolute urls
  * @param {*} outputDirectory - The directory handle
  */
-const saveAssetMappings = async (assetMappings, outputDirectory) => {
-  // Convert Map to a plain object
-  const obj = Object.fromEntries(assetMappings);
+const saveAssetMappings = async (jcrAssetMap, absoluteAssetUrlMap, outputDirectory) => {
+  // Combine the two maps into a single object using values from absoluteAssetUrlMap as key
+  // and values from jcrAssetMap as value
+  const obj = {};
+  Array.from(absoluteAssetUrlMap.entries()).forEach(([key, absoluteUrl]) => {
+    const jcrPath = jcrAssetMap.get(key);
+    if (absoluteUrl && jcrPath) {
+      obj[absoluteUrl] = jcrPath;
+    }
+  });
 
   // Save the updated asset mapping content into a file
   await saveFile(outputDirectory, ASSET_MAPPING_FILE, JSON.stringify(obj, null, 2));
@@ -179,11 +208,19 @@ export const createJcrPackage = async (
   const zip = new JSZip();
   const prefix = 'jcr';
 
-  // create a map using the provided asset urls as keys (values will be populated later)
-  const assetMappings = new Map(assetUrls.map((url) => [url, '']));
+  // create two maps using the provided asset urls as keys
+  // 1. jcrAssetMap - jcr adjusted values will be populated later
+  // 2. absoluteAssetUrlMap - absolute url values will be populated later
+  const { jcrAssetMap, absoluteAssetUrlMap } = createEmptyAssetMaps(assetUrls);
 
   // add the pages
-  jcrPages = await getJcrPages(pages, siteContentPath, assetFolder, assetMappings);
+  jcrPages = await getJcrPages(
+    pages,
+    siteContentPath,
+    assetFolder,
+    jcrAssetMap,
+    absoluteAssetUrlMap,
+  );
   for (let i = 0; i < jcrPages.length; i += 1) {
     const page = jcrPages[i];
     // eslint-disable-next-line no-await-in-loop
@@ -210,5 +247,5 @@ export const createJcrPackage = async (
   await zip.generateAsync({ type: outputType })
     .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
 
-  await saveAssetMappings(assetMappings, outputDirectory);
+  await saveAssetMappings(jcrAssetMap, absoluteAssetUrlMap, outputDirectory);
 };

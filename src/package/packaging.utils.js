@@ -10,9 +10,18 @@
  * governing permissions and limitations under the License.
  */
 import he from 'he';
-import path from 'path-browserify';
 import { DOMParser } from '@xmldom/xmldom';
 import { formatXML } from '../shared/xml.js';
+
+/**
+ * Create empty jcr and absolute asset url maps from asset keys.
+ * @param {Array<string>} assetKeys - The asset keys to create maps from.
+ * @returns {Object} - The maps of asset keys to their corresponding JCR paths and absolute urls.
+ */
+export const createEmptyAssetMaps = (assetKeys) => ({
+  jcrAssetMap: new Map(assetKeys.map((key) => [key, ''])),
+  absoluteAssetUrlMap: new Map(assetKeys.map((key) => [key, ''])),
+});
 
 /**
  * Get the parsed XML document.
@@ -287,7 +296,7 @@ export function getFullAssetUrl(assetReference, pageUrl) {
   if (assetReference.startsWith('http://') || assetReference.startsWith('https://')) {
     // if it is a localhost url, replace it with the origin from the pageUrlObj
     if (assetReference.startsWith('http://localhost:')) {
-      return `${pageUrlObj.origin}${assetReference.pathname}`;
+      return `${pageUrlObj.origin}${new URL(assetReference).pathname}`;
     }
     return assetReference; // return as is
   }
@@ -305,49 +314,50 @@ export function getFullAssetUrl(assetReference, pageUrl) {
   // Case 4: Subdirectory or filename relative to the page's directory, e.g. 'asset/foo.png'
   // Get the directory of the page
   const pagePath = pageUrlObj.pathname;
-  const pageDir = pagePath.endsWith('/') ? pagePath : pagePath.substring(0, pagePath.lastIndexOf('/') + 1);
+  const pageDir = pagePath.endsWith('/')
+    ? pagePath
+    : pagePath.substring(0, pagePath.lastIndexOf('/') + 1);
   return new URL(`./${assetReference}`, `${pageUrlObj.origin}${pageDir}`).href;
-}
-
-/**
- * Get the relative asset path from the page URL and the asset key.
- * Say for example the page url is https://foo.com/content/dam/xwalk/folderXYZ/page.html
- * - For assetPathName = /folderXYZ/cat.png (same dir as page), return ./cat.png
- * - For assetPathName = /folderXYZ/asset/bird.png (subdir of page), return asset/bird.png
- * - For assetPathName = /dog.png (parent dir of page), return ../dog.png
- * @param {string} pageUrl - The URL of the page
- * @param {string} assetPathName - The key of the asset
- * @returns {string} the relative asset path
- */
-export function getRelativeAssetPath(pageUrl, assetPathName) {
-  const pagePath = new URL(pageUrl).pathname;
-  const assetPath = new URL(assetPathName, pageUrl).pathname;
-
-  // Get the directory of the current page
-  const pageDir = pagePath.endsWith('/') ? pagePath : path.dirname(pagePath);
-
-  // Get the relative path using path.relative
-  let relPath = path.relative(pageDir, assetPath);
-
-  // For same-directory files, prepend './'
-  if (!relPath.startsWith('.') && !relPath.startsWith('/')) {
-    relPath = `./${relPath}`;
-  }
-
-  return relPath;
 }
 
 /**
  * Update the JCR asset map with the jcr asset path.
  * @param {Map} jcrAssetMap - The map of asset references to their corresponding JCR paths
- * @param {string} originalPath - The original asset path
+ * @param {string} key - The original asset path key
+ * @param {string} updatedAssetPath - The updated jcr asset path
+ */
+function updateJcrAssetMap(jcrAssetMap, key, updatedAssetPath) {
+  jcrAssetMap.set(key, updatedAssetPath); // add the new mapping entry
+}
+
+/**
+ * Update the absolute asset url map with the fully qualified url.
+ * @param {Map} absoluteAssetUrlMap - The map of asset references and corresponding absolute urls
+ * @param {string} key - The original asset path
+ * @param {string} pageUrl - The URL of the page
+ */
+function updateAbsoluteAssetUrlMap(absoluteAssetUrlMap, key, pageUrl) {
+  const fullyQualifiedUrl = getFullAssetUrl(key, pageUrl);
+  absoluteAssetUrlMap.set(key, fullyQualifiedUrl);
+}
+
+/**
+ * Update the asset maps with the jcr asset path and the fully qualified url.
+ * @param {Map} jcrAssetMap - The map of asset references and corresponding JCR paths
+ * @param {Map} absoluteAssetUrlMap - The map of asset references and corresponding absolute urls
+ * @param {string} key - The original asset path key
  * @param {string} updatedAssetPath - The updated jcr asset path
  * @param {string} pageUrl - The URL of the page
  */
-function updateJcrAssetMap(jcrAssetMap, originalPath, updatedAssetPath, pageUrl) {
-  const fullyQualifiedUrl = getFullAssetUrl(originalPath, pageUrl);
-  jcrAssetMap.delete(originalPath); // delete the original path entry first
-  jcrAssetMap.set(fullyQualifiedUrl, updatedAssetPath); // add the new mapping entry
+function updateAssetMaps(jcrAssetMap, absoluteAssetUrlMap, key, updatedAssetPath, pageUrl) {
+  // update the jcr asset map if the key is not already in the map
+  if (!jcrAssetMap.get(key)) {
+    updateJcrAssetMap(jcrAssetMap, key, updatedAssetPath);
+  }
+  // update the absolute asset url map if the key is not already in the map
+  if (!absoluteAssetUrlMap.get(key)) {
+    updateAbsoluteAssetUrlMap(absoluteAssetUrlMap, key, pageUrl);
+  }
 }
 
 /**
@@ -368,11 +378,17 @@ function isHtmlEncoded(str) {
  * @param {*} node - The node to traverse
  * @param {string} pageUrl - The URL of the page
  * @param {string} assetFolderName - The name of the asset folder(s) in AEM
- * @param {Map} jcrAssetMap - A map of asset references to their corresponding JCR paths
+ * @param {Map} jcrAssetMap - A map of asset references and corresponding JCR paths
+ * @param {Map} absoluteAssetUrlMap - A map of asset references and corresponding absolute urls
  */
-export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName, jcrAssetMap) => {
+export const traverseAndUpdateAssetReferences = (
+  node,
+  pageUrl,
+  assetFolderName,
+  jcrAssetMap,
+  absoluteAssetUrlMap,
+) => {
   if (node.nodeType === 1) { // Element node
-    const siteOrigin = new URL(pageUrl).origin;
     // eslint-disable-next-line no-restricted-syntax
     for (const attr of node.attributes) {
       let attrValue = node.getAttribute(attr.name);
@@ -388,58 +404,27 @@ export const traverseAndUpdateAssetReferences = (node, pageUrl, assetFolderName,
       const keys = [...jcrAssetMap.keys()];
       keys.forEach((key) => {
         if (attrValue.includes(key)) {
-          const jcrAssetPath = getJcrAssetRef(key, pageUrl, assetFolderName);
-          // update the map with the new jcr path
-          updateJcrAssetMap(jcrAssetMap, key, jcrAssetPath, pageUrl);
+          // get the JCR asset path from jcrAssetMap if it exists, else compute it
+          const jcrAssetPath = jcrAssetMap.get(key)
+            || getJcrAssetRef(key, pageUrl, assetFolderName);
+          // update the asset maps with the jcr asset path and the fully qualified url
+          updateAssetMaps(jcrAssetMap, absoluteAssetUrlMap, key, jcrAssetPath, pageUrl);
           // update the attribute value with the new jcr path
           attrValue = attrValue.replace(key, jcrAssetPath);
           node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
-        } else if (key.startsWith(siteOrigin)) { // asset may have been referenced more than once
-          // Scenario: In the following asset path mapping, assume the asset has been relatively
-          // referenced in two pages: A & B
-          // {
-          //     "/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg": ""
-          // }
-
-          // A. During processing of page A, the asset path is updated to:
-          // {
-          //     "https://foo.com/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg": "/content/dam/foo/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg"
-          // }
-
-          // B. During processing of page B, we first try to check if the key "https://foo.com/media_141b9e66743f7956337dcdd2b7cdf02ee6ec6fd82.jpeg"
-          // occurs in any attribute value (first 'if' condition), but since the key is now an
-          // absolute url (starting with the site origin) it is may not be found in the attrValue.
-          // Provided, the key was not found in the first if condition, and it starts with the
-          // site origin, we can assume that the asset has already been processed once.
-          const url = new URL(key);
-          // get the absolute asset path from key
-          const assetPathName = url.pathname;
-          // get the relative asset path (w.r.t. the page)
-          const relativeAssetPath = getRelativeAssetPath(pageUrl, assetPathName);
-          const normalizedRelativeAssetPath = relativeAssetPath.replace(/^\.\//, ''); // remove leading './' if present
-          // check for page relative asset path (same dir or subdir or parent dir)
-          if (attrValue.includes(relativeAssetPath)) {
-            // use the jcr asset path from the map, since it was already processed
-            attrValue = attrValue.replace(relativeAssetPath, jcrAssetMap.get(key));
-            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
-          } else if (attrValue.includes(normalizedRelativeAssetPath)) {
-            // getRelativeAssetPath returns a relative path starting with './' for all
-            // assets in same dir, so we need to consider both
-            // 1. the relative asset path - `./foo.png` (previous condition)
-            // 2. normalized relative asset path - `foo.png` (this condition)
-            attrValue = attrValue.replace(normalizedRelativeAssetPath, jcrAssetMap.get(key));
-            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
-          } else if (attrValue.includes(assetPathName)) { // check absolute asset path
-            attrValue = attrValue.replace(assetPathName, jcrAssetMap.get(key));
-            node.setAttribute(attr.name, isEncoded ? he.encode(attrValue) : attrValue);
-          }
         }
       });
     }
   }
   // Traverse child nodes
   for (let i = 0; i < node.childNodes.length; i += 1) {
-    traverseAndUpdateAssetReferences(node.childNodes[i], pageUrl, assetFolderName, jcrAssetMap);
+    traverseAndUpdateAssetReferences(
+      node.childNodes[i],
+      pageUrl,
+      assetFolderName,
+      jcrAssetMap,
+      absoluteAssetUrlMap,
+    );
   }
 };
 
