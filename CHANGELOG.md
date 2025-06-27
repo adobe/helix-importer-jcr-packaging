@@ -1,3 +1,10 @@
+## [2.0.9](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.8...v2.0.9) (2025-06-27)
+
+
+### Bug Fixes
+
+* Bug in asset reference update logic that generates invalid names paces in pages ([#19](https://github.com/adobe/helix-importer-jcr-packaging/issues/19)) ([3867374](https://github.com/adobe/helix-importer-jcr-packaging/commit/38673745f1c7d2a775998e8560acf001e7ecfcae))
+
 ## [2.0.8](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.7...v2.0.8) (2025-06-18)
 
 
