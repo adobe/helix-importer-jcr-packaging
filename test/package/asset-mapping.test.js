@@ -118,4 +118,42 @@ describe('getAssetUrlsFromMarkdown', () => {
     expect(imageUrl).to.be.an('array');
     expect(imageUrl).to.have.lengthOf(1);
   });
+
+  it('should skip data URLs and only return file URLs', () => {
+    const markdownContent = `
+# Test Document
+
+Regular image: ![Regular Image](/path/to/image.jpg)
+Data URL SVG: ![SVG Icon](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMTAwJSIgd2lkdGg9IjEwMCUiIHZpZXdCb3g9IjAgMCAxNiAxNiI+PGcgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMTYsOC4wNDhhOCw4LDAsMSwwLTkuMjUsNy45VjEwLjM2SDQuNzE5VjguMDQ4SDYuNzVWNi4yODVBMi44MjIsMi4yLDAsMCwxLDkuNzcxLDMuMTczYTEyLjIsMTIuMiwwLDAsMSwxLjc5MS4xNTZWNS4zSDEwLjU1NGExLjE1NSwxLjE1NSwwLDAsMC0xLjMsMS4yNXYxLjVoMi4yMTlsLS4zNTUsMi4zMTJIOS4yNXY1LjU5MUE4LDgsMCwwLDAsMTYsOC4wNDhaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz48L2c+PC9zdmc+)
+Data URL PNG: ![PNG Icon](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==)
+Another regular image: ![Another Image](https://example.com/image.png)
+
+Reference style with data URL:
+![Data Reference][dataref]
+![File Reference][fileref]
+
+[dataref]: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A
+[fileref]: /content/dam/assets/logo.jpg
+
+Download [Regular PDF](/content/dam/documents/guide.pdf)
+    `;
+
+    const assetUrls = getAssetUrlsFromMarkdown(markdownContent);
+
+    // Should only return 4 URLs (2 regular images + 1 reference file + 1 regular PDF)
+    expect(assetUrls).to.have.lengthOf(4);
+
+    // Should include regular file URLs
+    expect(assetUrls).to.include('/path/to/image.jpg');
+    expect(assetUrls).to.include('https://example.com/image.png');
+    expect(assetUrls).to.include('/content/dam/assets/logo.jpg');
+    expect(assetUrls).to.include('/content/dam/documents/guide.pdf');
+
+    // Should NOT include image data URLs
+    expect(assetUrls).to.not.include.members([
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMTAwJSIgd2lkdGg9IjEwMCUiIHZpZXdCb3g9IjAgMCAxNiAxNiI+PGcgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMTYsOC4wNDhhOCw4LDAsMSwwLTkuMjUsNy45VjEwLjM2SDQuNzE5VjguMDQ4SDYuNzVWNi4yODVBMi44MjIsMi4yLDAsMCwxLDkuNzcxLDMuMTczYTEyLjIsMTIuMiwwLDAsMSwxLjc5MS4xNTZWNS4zSDEwLjU1NGExLjE1NSwxLjE1NSwwLDAsMC0xLjMsMS4yNXYxLjVoMi4yMTlsLS4zNTUsMi4zMTJIOS4yNXY1LjU5MUE4LDgsMCwwLDAsMTYsOC4wNDhaIiBmaWxsPSJjdXJyZW50Q29sb3IiLz48L2c+PC9zdmc+',
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+      'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A',
+    ]);
+  });
 });
