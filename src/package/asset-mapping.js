@@ -60,7 +60,8 @@ const findAssetsInMarkdown = (markdownContent) => {
     } else if (match[5]) { // Reference-style image
       url = references[match[5]] || null; // Resolve URL from reference map
     }
-    if (url) {
+    // Skip image data URLs (embedded base64 images like data:image/svg+xml;base64,...)
+    if (url && !url.startsWith('data:')) {
       assetUrls.push(url);
     }
   }
