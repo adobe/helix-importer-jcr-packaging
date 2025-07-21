@@ -1,3 +1,10 @@
+## [2.0.10](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.9...v2.0.10) (2025-07-21)
+
+
+### Bug Fixes
+
+* Skip any embedded data URLs when compiling a list of referenced assets for downloading ([#20](https://github.com/adobe/helix-importer-jcr-packaging/issues/20)) ([55cbee4](https://github.com/adobe/helix-importer-jcr-packaging/commit/55cbee463e70d91ee0aeed2e1822a9a71a6232e5))
+
 ## [2.0.9](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.8...v2.0.9) (2025-06-27)
 
 
