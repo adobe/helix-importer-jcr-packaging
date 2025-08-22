@@ -13,7 +13,8 @@
 // Regex for inline images & reference-style images
 // 1. inline images: ![Alt text](url "title")
 // 2. reference-style images: ![Alt text][ReferenceLabel]
-const imageRegex = /!\[([^\]]*)]\(([^) "]+)(?: *"([^"]*)")?\)|!\[([^\]]*)]\[([^\]]+)]/g;
+// Updated to handle escaped brackets in alt text using (?:\\.|[^\]])* pattern
+const imageRegex = /!\[((?:\\.|[^\]])*)\]\(([^) "]+)(?: *"([^"]*)")?\)|!\[((?:\\.|[^\]])*)\]\[([^\]]+)\]/g;
 
 // Regex for reference definitions
 const referenceRegex = /\[([^\]]+)]:\s*(\S+)/g;
