@@ -1,3 +1,10 @@
+## [2.0.11](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.10...v2.0.11) (2025-08-25)
+
+
+### Bug Fixes
+
+* update image regex to handle escaped alt text ([#21](https://github.com/adobe/helix-importer-jcr-packaging/issues/21)) ([3f569e0](https://github.com/adobe/helix-importer-jcr-packaging/commit/3f569e0763520e1f61141793409721c339d1c2e0))
+
 ## [2.0.10](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.9...v2.0.10) (2025-07-21)
 
 
