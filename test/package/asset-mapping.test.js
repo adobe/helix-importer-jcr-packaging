@@ -156,4 +156,33 @@ Download [Regular PDF](/content/dam/documents/guide.pdf)
       'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A',
     ]);
   });
+
+  it('should find all assets in wknd-trendsetters.md fixture', async () => {
+    const markdownContent = await loadFile('../fixtures/wknd-trendsetters/wknd-trendsetters.md');
+    const assetUrls = getAssetUrlsFromMarkdown(markdownContent);
+
+    // Should find 9 asset URLs (including duplicates from multiple references)
+    expect(assetUrls).to.have.lengthOf(9);
+
+    // Should include the CDN image URLs that are actually found
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/image-generation-assets/793c17eb-ae3c-458b-b8fa-a189b0052bc6.avif'); // image0
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/image-generation-assets/f55b6d62-bc1d-4700-8258-318e659fa50c.avif'); // image1
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/685659f2651d1abee4832887/68565a6c53e53dcd1effd2b6_7101dd4d-174a-4d00-82a1-383912b95bdb.avif'); // image10
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/685659f2651d1abee4832887/68565a6c90d15f06db8c3063_05222b1a-c1f8-4466-a89e-8372f97aecc0.avif'); // image11
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/685659f2651d1abee4832887/68565a6cd421d169780374bf_9ad18339-65d0-40a9-9bff-7b374acace0a.avif'); // image12
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/685659f2651d1abee4832887/68565a6c58786282145eff60_deca1497-b229-4572-bcdf-56566120eec4.avif'); // image13
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/image-generation-assets/5db1565e-357f-43eb-93a8-3692f45b38d5.avif'); // image14
+    expect(assetUrls).to.include('https://cdn.prod.website-files.com/image-generation-assets/e198cd7a-a7bd-4756-ab20-d81853a5b03f.avif'); // image15
+
+    // Should NOT include any data URLs (SVG base64 encoded images for image2-image9)
+    expect(assetUrls).to.not.include.members([
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTEyLjUgMTguMjVDMTYuMjI3OSAxOC4yNSAxOS4yNSA5LjIyNzkgMTkuMjUgMTEuNUMxOS4yNSA3Ljc3MjA4IDE2LjIyNzkgNC43NSAxMi41IDQuNzVDOC43NzIwOCA0Ljc1IDUuNzUgNy43NzIwOCA1Ljc1IDExLjVDNS43NSAxMi42MDA3IDYuMDEzNDUgMTMuNjM5OCA2LjQ4MDcyIDE0LjU1NzhMNSAxOUw5LjcxODE5IDE3LjY1MTlDMTAuNTY2NCAxOC4wMzYxIDExLjUwODIgMTguMjUgMTIuNSAxOC4yNVoiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==',
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHBhdGggZD0iTTUuMjUgNi43NUgxOC43NVYxNy4yNUg1LjI1VjYuNzVaIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNNS4yNSA2Ljc1TDEyIDEyTDE4Ljc1IDYuNzUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==',
+    ]);
+
+    // Verify that all found URLs are valid (not data URLs)
+    assetUrls.forEach((url) => {
+      expect(url).to.not.match(/^data:/);
+    });
+  });
 });
