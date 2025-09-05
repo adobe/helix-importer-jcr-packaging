@@ -157,6 +157,23 @@ Download [Regular PDF](/content/dam/documents/guide.pdf)
     ]);
   });
 
+  it('should handle image URLs with double forward slashes', () => {
+    const markdownContent = `+-----------------------+
+| Hero                  |
++=======================+
+| ![Adobe Image][image0]|
+| ![Adobe Image][image1]|
++-----------------------+
+
+[image0]: https://www.adobe.com//wp-content/uploads/2025/09/foo-768x451-1.png
+[image1]: https://www.adobe.com/wp-content/uploads/2025/09/bar-2.png`;
+
+    const imageUrls = getAssetUrlsFromMarkdown(markdownContent);
+    expect(imageUrls).to.have.lengthOf(2);
+    expect(imageUrls[0]).to.equal('https://www.adobe.com//wp-content/uploads/2025/09/foo-768x451-1.png');
+    expect(imageUrls[1]).to.equal('https://www.adobe.com/wp-content/uploads/2025/09/bar-2.png');
+  });
+
   it('should find all assets in wknd-trendsetters.md fixture', async () => {
     const markdownContent = await loadFile('../fixtures/wknd-trendsetters/wknd-trendsetters.md');
     const assetUrls = getAssetUrlsFromMarkdown(markdownContent);
