@@ -1,3 +1,10 @@
+## [2.0.12](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.11...v2.0.12) (2025-09-19)
+
+
+### Bug Fixes
+
+* Preserve asset name's original case ([#25](https://github.com/adobe/helix-importer-jcr-packaging/issues/25)) ([d600823](https://github.com/adobe/helix-importer-jcr-packaging/commit/d6008237b9e2058636647b3ea138cdb93beaba82))
+
 ## [2.0.11](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.10...v2.0.11) (2025-08-25)
 
 
