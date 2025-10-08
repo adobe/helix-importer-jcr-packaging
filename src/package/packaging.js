@@ -249,3 +249,26 @@ export const createJcrPackage = async (
 
   await saveAssetMappings(jcrAssetMap, absoluteAssetUrlMap, outputDirectory);
 };
+
+/**
+ * Herlp to create a page object for a JCR package.
+ * @param {*} path the path of the page
+ * @param {*} data the data of the page
+ * @param {*} url the url of the page
+ * @returns {{
+ *   type: 'jcr',
+ *   path: string,
+ *   data: string,
+ *   url: string,
+ * }} the page object
+ */
+export const createPage = (
+  path,
+  data,
+  url,
+) => ({
+  type: 'jcr',
+  path,
+  data,
+  url,
+});
