@@ -1,3 +1,10 @@
+## [2.0.13](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.12...v2.0.13) (2025-10-08)
+
+
+### Bug Fixes
+
+* create a new api for create page ([#26](https://github.com/adobe/helix-importer-jcr-packaging/issues/26)) ([930e2e0](https://github.com/adobe/helix-importer-jcr-packaging/commit/930e2e0238671602661172c99680cf50fef9e251))
+
 ## [2.0.12](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.11...v2.0.12) (2025-09-19)
 
 
