@@ -9,10 +9,11 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { createJcrPackage } from './package/packaging.js';
+import { createJcrPackage, createPage } from './package/packaging.js';
 import { getAssetUrlsFromMarkdown } from './package/asset-mapping.js';
 
 export {
+  createPage,
   createJcrPackage,
   getAssetUrlsFromMarkdown,
 };

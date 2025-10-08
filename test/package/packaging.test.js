@@ -13,6 +13,7 @@
 import { readFile, rm } from 'fs/promises';
 import { expect } from 'chai';
 import {
+  createPage,
   createJcrPackage,
   updateAssetReferences,
 } from '../../src/package/packaging.js';
@@ -148,19 +149,18 @@ describe('packaging', () => {
   });
 
   it('should create a jcr package with empty ancestor pages', async () => {
+    // update code to use createPage
     const pages = [
-      {
-        type: 'jcr',
-        path: '/about/golf',
-        data: '<?xml version="1.0" encoding="UTF-8"?>\n<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">\n  <jcr:content cq:template="/libs/core/franklin/templates/page" sling:resourceType="core/franklin/components/page/v1/page" jcr:primaryType="cq:PageContent" jcr:title="Golfing" jcr:description="Golfing" modelFields="[jcr:title,jcr:description,keywords]">\n    <root jcr:primaryType="nt:unstructured" sling:resourceType="core/franklin/components/root/v1/root">\n      <section sling:resourceType="core/franklin/components/section/v1/section" jcr:primaryType="nt:unstructured" modelFields="[name,style]"></section>\n    </root>\n  </jcr:content>\n</jcr:root>',
-        url: 'https://www.domain.com/about/golf',
-      },
-      {
-        type: 'jcr',
-        path: '/about/golf/team',
-        data: '<?xml version="1.0" encoding="UTF-8"?>\n<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">\n  <jcr:content cq:template="/libs/core/franklin/templates/page" sling:resourceType="core/franklin/components/page/v1/page" jcr:primaryType="cq:PageContent" jcr:title="Team" jcr:description="Golf TEam" modelFields="[jcr:title,jcr:description,keywords]">\n    <root jcr:primaryType="nt:unstructured" sling:resourceType="core/franklin/components/root/v1/root">\n      <section sling:resourceType="core/franklin/components/section/v1/section" jcr:primaryType="nt:unstructured" modelFields="[name,style]"></section>\n    </root>\n  </jcr:content>\n</jcr:root>',
-        url: 'https://www.domain.com/about/golf/team',
-      },
+      createPage(
+        '/about/golf',
+        '<?xml version="1.0" encoding="UTF-8"?>\n<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">\n  <jcr:content cq:template="/libs/core/franklin/templates/page" sling:resourceType="core/franklin/components/page/v1/page" jcr:primaryType="cq:PageContent" jcr:title="Golfing" jcr:description="Golfing" modelFields="[jcr:title,jcr:description,keywords]">\n    <root jcr:primaryType="nt:unstructured" sling:resourceType="core/franklin/components/root/v1/root">\n      <section sling:resourceType="core/franklin/components/section/v1/section" jcr:primaryType="nt:unstructured" modelFields="[name,style]"></section>\n    </root>\n  </jcr:content>\n</jcr:root>',
+        'https://www.domain.com/about/golf',
+      ),
+      createPage(
+        '/about/golf/team',
+        '<?xml version="1.0" encoding="UTF-8"?>\n<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" jcr:primaryType="cq:Page">\n  <jcr:content cq:template="/libs/core/franklin/templates/page" sling:resourceType="core/franklin/components/page/v1/page" jcr:primaryType="cq:PageContent" jcr:title="Team" jcr:description="Golf TEam" modelFields="[jcr:title,jcr:description,keywords]">\n    <root jcr:primaryType="nt:unstructured" sling:resourceType="core/franklin/components/root/v1/root">\n      <section sling:resourceType="core/franklin/components/section/v1/section" jcr:primaryType="nt:unstructured" modelFields="[name,style]"></section>\n    </root>\n  </jcr:content>\n</jcr:root>',
+        'https://www.domain.com/about/golf/team',
+      ),
     ];
     const template = getEmptyPageTemplate();
 
@@ -190,11 +190,11 @@ describe('packaging', () => {
 
   it('should create a JCR package with valid pages', async () => {
     const pages = [
-      {
-        path: '/content/site/page1',
-        data: await loadFile(ORIGINAL_XML_PATH),
-        url: PAGE_URL,
-      },
+      createPage(
+        '/content/site/page1',
+        await loadFile(ORIGINAL_XML_PATH),
+        PAGE_URL,
+      ),
     ];
     const imageUrls = await getImageUrlKeysArray();
     const siteFolderName = '/content/site';
@@ -206,11 +206,11 @@ describe('packaging', () => {
 
   it('should handle empty ancestor pages in createJcrPackage', async () => {
     const pages = [
-      {
-        path: '/content/site/page1',
-        data: await loadFile(ORIGINAL_XML_PATH),
-        url: PAGE_URL,
-      },
+      createPage(
+        '/content/site/page1',
+        await loadFile(ORIGINAL_XML_PATH),
+        PAGE_URL,
+      ),
     ];
     const imageUrls = await getImageUrlKeysArray();
     const siteFolderName = '/content/site';
@@ -218,5 +218,19 @@ describe('packaging', () => {
 
     await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
     // No assertions needed, just ensure no errors are thrown
+  });
+
+  it('should create a page object', async () => {
+    const page = createPage(
+      '/content/site/page1',
+      await loadFile(ORIGINAL_XML_PATH),
+      PAGE_URL,
+    );
+    expect(page).to.be.an('object');
+    expect(Object.keys(page)).to.deep.equal(['type', 'path', 'data', 'url']);
+    expect(page.type).to.equal('jcr');
+    expect(page.path).to.equal('/content/site/page1');
+    expect(page.data).to.equal(await loadFile(ORIGINAL_XML_PATH));
+    expect(page.url).to.equal(PAGE_URL);
   });
 });
