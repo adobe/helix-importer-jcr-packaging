@@ -251,7 +251,7 @@ export const createJcrPackage = async (
 };
 
 /**
- * Herlp to create a page object for a JCR package.
+ * Helper to create a page object for a JCR package.
  * @param {*} path the path of the page
  * @param {*} data the data of the page
  * @param {*} url the url of the page
