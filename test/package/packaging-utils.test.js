@@ -22,7 +22,7 @@ describe('packaging-utils', () => {
   it('test the getPropertiesXml', async () => {
     const props = getPropertiesXml();
     expect(props.propXmlPath).to.equal('META-INF/vault/properties.xml');
-    expect(props.propXml).to.contain('<?xml version="1.0" encoding="UTF-8"?>');
+    expect(props.propXml).to.contain("<?xml version='1.0' encoding='UTF-8'?>");
   });
 
   it('test the getPropertiesXml with custom props', async () => {
