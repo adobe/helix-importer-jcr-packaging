@@ -33,7 +33,7 @@
     "he": "1.2.0",
     "jszip": "3.10.1",
     "path-browserify": "^1.0.1",
-    "xml-formatter": "3.6.5"
+    "xml-formatter": "3.6.7"
   },
   "devDependencies": {
     "@adobe/eslint-config-helix": "2.0.8",
