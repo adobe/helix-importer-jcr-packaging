@@ -1,3 +1,10 @@
+## [2.0.15](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.14...v2.0.15) (2025-12-01)
+
+
+### Bug Fixes
+
+* update semantic-release to v25 and node to 24.x for OIDC ([#27](https://github.com/adobe/helix-importer-jcr-packaging/issues/27)) ([86f4caf](https://github.com/adobe/helix-importer-jcr-packaging/commit/86f4cafffb36c44684a34463898315f2cef27ec1))
+
 ## [2.0.14](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.13...v2.0.14) (2025-12-01)
 
 
