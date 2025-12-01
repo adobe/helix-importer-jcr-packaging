@@ -1,3 +1,10 @@
+## [2.0.14](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.13...v2.0.14) (2025-12-01)
+
+
+### Bug Fixes
+
+* bump xml-formatter version ([2b5f87e](https://github.com/adobe/helix-importer-jcr-packaging/commit/2b5f87e80c1b78c32477fba10c3a10e890df9bd6))
+
 ## [2.0.13](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.12...v2.0.13) (2025-10-08)
 
 
