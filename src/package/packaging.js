@@ -171,6 +171,7 @@ const saveAssetMappings = async (jcrAssetMap, absoluteAssetUrlMap, outputDirecto
  * @param {Array<string>} assetUrls - An array of asset urls that were found in the markdown.
  * @param {string} siteContentPath - The path to the site content in AEM under /content.
  * @param {string} assetDamPath - The path to the assets in AEM under /content/dam.
+ * @param {string} [packageName] - Optional custom package name (without extension).
  * @returns {Promise<void>} - The promise is resolved when the package is created.
  */
 export const createJcrPackage = async (
@@ -179,6 +180,7 @@ export const createJcrPackage = async (
   assetUrls,
   siteContentPath,
   assetDamPath,
+  packageName,
 ) => {
   if (pages.length === 0) {
     return;
@@ -204,7 +206,14 @@ export const createJcrPackage = async (
   siteName = siteName.replace(/\/+$/, '');
   assetFolder = assetFolder.replace(/\/+$/, '');
 
-  const packageName = getPackageName(pages, siteName);
+  // Use provided packageName or generate one
+  let finalPackageName = packageName;
+
+  // If no package name provided, generate it
+  if (!finalPackageName) {
+    finalPackageName = getPackageName(pages, siteName);
+  }
+
   const zip = new JSZip();
   const prefix = 'jcr';
 
@@ -239,13 +248,13 @@ export const createJcrPackage = async (
   await addFilterXml(outputDirectory, prefix, zip);
 
   // add the properties.xml file
-  await addPropertiesXml(outputDirectory, prefix, zip, packageName);
+  await addPropertiesXml(outputDirectory, prefix, zip, finalPackageName);
 
   const outputType = typeof window !== 'undefined' ? 'blob' : 'nodebuffer';
 
   // save the zip file
   await zip.generateAsync({ type: outputType })
-    .then(async (blob) => saveFile(outputDirectory, `${packageName}.zip`, blob));
+    .then(async (blob) => saveFile(outputDirectory, `${finalPackageName}.zip`, blob));
 
   await saveAssetMappings(jcrAssetMap, absoluteAssetUrlMap, outputDirectory);
 };

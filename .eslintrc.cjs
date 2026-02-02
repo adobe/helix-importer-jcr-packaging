@@ -28,8 +28,10 @@ module.exports = {
     }],
     'import/no-unresolved': [2, { ignore: ['^preact', '^htm'] }],
     'import/prefer-default-export': ['off'],
+    'no-unused-expressions': 0,
+    'chai-friendly/no-unused-expressions': 2,
   },
-  plugins: ['import'],
+  plugins: ['import', 'chai-friendly'],
   settings: {
     'import/resolver': {
       exports: {},
