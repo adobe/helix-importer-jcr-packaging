@@ -1,3 +1,10 @@
+## [2.0.16](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.15...v2.0.16) (2026-02-03)
+
+
+### Bug Fixes
+
+* support custom package names when generating final content package zip ([#28](https://github.com/adobe/helix-importer-jcr-packaging/issues/28)) ([5b65c06](https://github.com/adobe/helix-importer-jcr-packaging/commit/5b65c069b97a227fb5e5b34325bfc2d3df2a546e))
+
 ## [2.0.15](https://github.com/adobe/helix-importer-jcr-packaging/compare/v2.0.14...v2.0.15) (2025-12-01)
 
 
