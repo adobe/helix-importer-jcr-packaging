@@ -233,4 +233,65 @@ describe('packaging', () => {
     expect(page.data).to.equal(await loadFile(ORIGINAL_XML_PATH));
     expect(page.url).to.equal(PAGE_URL);
   });
+
+  it('should use custom package name when provided', async () => {
+    const pages = [
+      createPage(
+        '/content/site/page1',
+        await loadFile(ORIGINAL_XML_PATH),
+        PAGE_URL,
+      ),
+    ];
+    const imageUrls = await getImageUrlKeysArray();
+    const siteFolderName = '/content/site';
+    const assetFolderName = '/content/dam/assets';
+    const customPackageName = 'my-custom-package';
+
+    await createJcrPackage(
+      outdir,
+      pages,
+      imageUrls,
+      siteFolderName,
+      assetFolderName,
+      customPackageName,
+    );
+
+    // Verify the zip file was created with custom name
+    const zipFile = await loadFile(`../../${outdir}/${customPackageName}.zip`);
+    expect(zipFile).to.exist;
+  });
+
+  it('should use default package name when custom name not provided', async () => {
+    const pages = [
+      createPage(
+        '/content/site/page1',
+        await loadFile(ORIGINAL_XML_PATH),
+        PAGE_URL,
+      ),
+    ];
+    const imageUrls = await getImageUrlKeysArray();
+    const siteFolderName = '/content/site';
+    const assetFolderName = '/content/dam/assets';
+
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
+
+    // Verify the zip file was created with default name (site_page1 for single page)
+    const zipFile = await loadFile(`../../${outdir}/site_page1.zip`);
+    expect(zipFile).to.exist;
+  });
+
+  it('should use default package name for multiple pages when custom name not provided', async () => {
+    const pages = [
+      createPage('/content/site/page1', await loadFile(ORIGINAL_XML_PATH), PAGE_URL),
+      createPage('/content/site/page2', await loadFile(ORIGINAL_XML_PATH), PAGE_URL),
+    ];
+    const imageUrls = await getImageUrlKeysArray();
+    const siteFolderName = '/content/site';
+    const assetFolderName = '/content/dam/assets';
+
+    await createJcrPackage(outdir, pages, imageUrls, siteFolderName, assetFolderName);
+
+    const zipFile = await loadFile(`../../${outdir}/site.zip`);
+    expect(zipFile).to.exist;
+  });
 });
